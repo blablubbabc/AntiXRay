@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.AbstractMap.SimpleEntry;
 
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 
 import org.bukkit.event.EventHandler;
@@ -54,8 +53,8 @@ class EntityEventHandler implements Listener
 			for(int i = 0; i < AntiXRay.instance.config_protectedBlocks.size(); i++)
 			{			
 				//if it's type is in our protected blocks list, remove the block from the explosion list (so it doesn't break)
-				SimpleEntry<Material, Integer> entry = AntiXRay.instance.config_protectedBlocks.get(i);
-				if(entry.getKey() == block.getType() && entry.getValue() > 0)
+				SimpleEntry<BlockData, Integer> entry = AntiXRay.instance.config_protectedBlocks.get(i);
+				if(entry.getKey().isEqual(block) && entry.getValue() > 0)
 				{
 					blocks.remove(j--);
 				}

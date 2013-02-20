@@ -21,7 +21,6 @@ package me.ryanhamshire.AntiXRay;
 import java.util.AbstractMap.SimpleEntry;
 
 import org.bukkit.GameMode;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -69,10 +68,10 @@ public class BlockEventHandler implements Listener
 		
 		//look for the block's type in the list of protected blocks
 		for(int i = 0; i < AntiXRay.instance.config_protectedBlocks.size(); i++)
-		{			
+		{
 			//if it's in the list, consider whether this player should be permitted to break the block
-			SimpleEntry<Material, Integer> entry = AntiXRay.instance.config_protectedBlocks.get(i);
-			if(entry.getKey() == block.getType())
+			SimpleEntry<BlockData, Integer> entry = AntiXRay.instance.config_protectedBlocks.get(i);
+			if(entry.getKey().isEqual(block))
 			{
 				//if he doesn't have enough points
 				if(entry.getValue() > 0 && playerData.points < entry.getValue())
