@@ -211,8 +211,8 @@ public class AntiXRay extends JavaPlugin {
 		config.set("AntiXRay.NotifyOnMiningLimitReached", this.config_notifyOnLimitReached);
 
 		for (Entry<String, BlockData> entry : customBlocks.entrySet()) {
-			config.set("AntiXRay.CustomBlockDefinitions." + entry.getKey() + "ID", entry.getValue().getId());
-			config.set("AntiXRay.CustomBlockDefinitions." + entry.getKey() + "Sub ID", entry.getValue().getSubid());
+			config.set("AntiXRay.CustomBlockDefinitions." + entry.getKey() + ".ID", entry.getValue().getId());
+			config.set("AntiXRay.CustomBlockDefinitions." + entry.getKey() + ".Sub ID", entry.getValue().getSubid());
 		}
 
 		for (int i = 0; i < this.config_protectedBlocks.size(); i++) {
