@@ -68,7 +68,6 @@ public class AntiXRay extends JavaPlugin {
 
 	// initializes well... everything
 	public void onEnable() {
-		AddLogEntry("AntiXRay enabled.");
 
 		instance = this;
 
@@ -246,6 +245,8 @@ public class AntiXRay extends JavaPlugin {
 		// entity events
 		EntityEventHandler entityEventHandler = new EntityEventHandler();
 		pluginManager.registerEvents(entityEventHandler, this);
+		
+		AddLogEntry("AntiXRay enabled.");
 	}
 
 	// on disable, close any open files and/or database connections
