@@ -20,5 +20,13 @@ package me.ryanhamshire.AntiXRay;
 
 public enum Messages
 {
-	CantBreakYet, AdminNotification
+	CantBreakYet, 
+	AdminNotification,
+	NoPermission,
+	OnlyAsPlayer,
+	CommandReload,
+	ReloadDone,
+	CommandPoints,
+	CurrentPoints,
+	NoPlayerDataFound;
 }

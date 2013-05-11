@@ -74,20 +74,43 @@ abstract class DataStore
 		return this.playerNameToPlayerDataMap.get(playerName);
 	}
 	
+	//returns PlayerData for a player with the given name and RETURNS NULL if no PlayerData was found for this name
+	public PlayerData getPlayerDataIfExist(String playerName) {
+		// first, look in memory
+		PlayerData playerData = this.playerNameToPlayerDataMap.get(playerName);
+
+		// if not there, look on disk
+		if (playerData == null) {
+			playerData = this.loadPlayerDataFromStorageIfExist(playerName);
+		}
+		
+		return playerData;
+	}
+	
+	//default points = max when the player has played on the server before
+	//otherwise, use starting points from config file
+	int getDefaultPoints(Player player) {
+		return getDefaultPoints(player.hasPlayedBefore());
+	}
+	
+	int getDefaultPoints(boolean hasPlayedBefore) {
+		if(!hasPlayedBefore)
+		{
+			return AntiXRay.instance.config_startingPoints;
+		}
+		else
+		{
+			return AntiXRay.instance.config_maxPoints;
+		}
+	}
+	
+	//returns a default PlayerData object for the given player
 	PlayerData getDefaultPlayerData(Player player)
 	{
 		PlayerData playerData = new PlayerData();
 		
-		//default points = max when the player has played on the server before
-		//otherwise, use starting points from config file
-		if(!player.hasPlayedBefore())
-		{
-			playerData.points = AntiXRay.instance.config_startingPoints;
-		}
-		else
-		{
-			playerData.points = AntiXRay.instance.config_maxPoints;
-		}
+		//default points
+		playerData.points = getDefaultPoints(player);
 		
 		return playerData;
 	}
@@ -95,9 +118,17 @@ abstract class DataStore
 	//implementation varies depending on flat file or database storage
 	abstract PlayerData loadPlayerDataFromStorage(Player player);
 	
+	//loading PlayerData by a given name and returns null, if there is no data stored for a player with this name
+	//implementation varies depending on flat file or database storage
+	abstract PlayerData loadPlayerDataFromStorageIfExist(String playerName);
+	
 	//saves changes to player data.  MUST be called after you're done making changes, otherwise a reload will lose them
 	//implementation varies based on flat file or database storage
 	abstract void savePlayerData(String playerName, PlayerData playerData);
+	
+	//whether or not data was stored for a player with this name
+	//implementation varies based on flat file or database storage
+	abstract boolean existsPlayerData(String playerName);
 	
 	//loads user-facing messages from the messages.yml configuration file into memory
 	private void loadMessages() 
@@ -110,6 +141,13 @@ abstract class DataStore
 		//initialize defaults
 		this.addDefault(defaults, Messages.CantBreakYet, "Wow, you're good at mining!  You have to wait about {0} minutes to break this block.  If you wait longer, you can mine even more of this.  Consider taking a break from mining to do something else, like building or exploring.  This mining speed limit keeps our ores safe from cheaters.  :)", "0: minutes until the block can be broken");
 		this.addDefault(defaults, Messages.AdminNotification, "{0} reached the mining speed limit.", "0: player name");
+		this.addDefault(defaults, Messages.NoPermission, "You have no permission for that.", null);
+		this.addDefault(defaults, Messages.OnlyAsPlayer, "This command can only be executed as a player.", null);
+		this.addDefault(defaults, Messages.CommandReload, "Reloads the configuration and messages.", null);
+		this.addDefault(defaults, Messages.ReloadDone, "AntiXRay was reloaded. Check the log if there were any errors.", null);
+		this.addDefault(defaults, Messages.CommandPoints, "Shows you your or another players current points.", null);
+		this.addDefault(defaults, Messages.CurrentPoints, "{0} currently has {1} points.", "0: player name  1: the players points");
+		this.addDefault(defaults, Messages.NoPlayerDataFound, "No PlayerData was found for '{0}'.", "0: player name");
 		
 		//load the config file
 		FileConfiguration config = YamlConfiguration.loadConfiguration(new File(messagesFilePath));

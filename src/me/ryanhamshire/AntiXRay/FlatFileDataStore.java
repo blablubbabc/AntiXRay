@@ -44,32 +44,31 @@ class FlatFileDataStore extends DataStore
 	PlayerData loadPlayerDataFromStorage(Player player)
 	{
 		String playerName = player.getName();
-		
-		File playerFile = new File(playerDataFolderPath + File.separator + playerName);
 						
+		PlayerData playerData = loadPlayerDataFromStorageIfExist(playerName);
+		
+		//if it doesn't exist, set default points
+		if (playerData == null) {
+			playerData = getDefaultPlayerData(player);
+		}
+		
+		return playerData;
+	}
+	
+	// returns null, if there is no PlayerData saved for this playerName
+	@Override
+	PlayerData loadPlayerDataFromStorageIfExist(String playerName) {
+		File playerFile = new File(playerDataFolderPath + File.separator + playerName);
+		
 		PlayerData playerData = new PlayerData();
 		
 		//if it doesn't exist as a file
-		if(!playerFile.exists())
-		{
-			//default points = max when the player has played on the server before
-			//otherwise, use starting points from config file
-			if(!player.hasPlayedBefore())
-			{
-				playerData.points = AntiXRay.instance.config_startingPoints;
-			}
-			else
-			{
-				playerData.points = AntiXRay.instance.config_maxPoints;
-			}
-			
-			//create a file with defaults
-			this.savePlayerData(playerName, playerData);
+		if(!playerFile.exists()) {
+			return null;
 		}
 		
 		//otherwise, read the file
-		else
-		{			
+		else {			
 			BufferedReader inStream = null;
 			try
 			{					
@@ -85,13 +84,11 @@ class FlatFileDataStore extends DataStore
 			}
 				
 			//if there's any problem with the file's content, log an error message
-			catch(Exception e)
-			{
+			catch(Exception e) {
 				 AntiXRay.AddLogEntry("Unable to load data for player \"" + playerName + "\": " + e.getMessage());			 
 			}
 			
-			try
-			{
+			try {
 				if(inStream != null) inStream.close();
 			}
 			catch(IOException exception) {}
@@ -134,8 +131,16 @@ class FlatFileDataStore extends DataStore
 	}
 	
 	@Override
+	boolean existsPlayerData(String playerName) {
+		File playerFile = new File(playerDataFolderPath + File.separator + playerName);
+		//whether or not the file exists
+		return playerFile.exists();
+	}
+	
+	@Override
 	void close()
 	{ 
 		//nothing to do here because files are not left open after reading or writing
 	}
+	
 }

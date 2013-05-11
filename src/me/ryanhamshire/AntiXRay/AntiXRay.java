@@ -71,6 +71,50 @@ public class AntiXRay extends JavaPlugin {
 
 		instance = this;
 
+		// load configuration
+		loadConfig();
+
+		this.dataStore = new FlatFileDataStore();
+
+		// start the task to regularly give players the points they've earned for play time 20L ~ 1 second
+		DeliverPointsTask task = new DeliverPointsTask();
+		this.getServer().getScheduler().scheduleSyncRepeatingTask(this, task, 20L * 60 * 5, 20L * 60 * 5);
+
+		// register for events
+		PluginManager pluginManager = this.getServer().getPluginManager();
+
+		// player events
+		PlayerEventHandler playerEventHandler = new PlayerEventHandler(this.dataStore);
+		pluginManager.registerEvents(playerEventHandler, this);
+
+		// block events
+		BlockEventHandler blockEventHandler = new BlockEventHandler(this.dataStore);
+		pluginManager.registerEvents(blockEventHandler, this);
+
+		// entity events
+		EntityEventHandler entityEventHandler = new EntityEventHandler();
+		pluginManager.registerEvents(entityEventHandler, this);
+		
+		// command handler
+		getCommand("antixray").setExecutor(new CommandHandler());
+		
+		AddLogEntry("AntiXRay enabled.");
+	}
+
+	// on disable, close any open files and/or database connections
+	public void onDisable() {
+		// ensure all online players get their data saved
+		Player[] players = this.getServer().getOnlinePlayers();
+		for (int i = 0; i < players.length; i++) {
+			Player player = players[i];
+			String playerName = player.getName();
+			this.dataStore.savePlayerData(playerName, this.dataStore.getPlayerData(player));
+		}
+
+		this.dataStore.close();
+	}
+	
+	void loadConfig() {
 		// load the config if it exists
 		FileConfiguration config = YamlConfiguration.loadConfiguration(new File(DataStore.configFilePath));
 
@@ -95,8 +139,7 @@ public class AntiXRay extends JavaPlugin {
 			String worldName = enabledWorldNames.get(i);
 			World world = this.getServer().getWorld(worldName);
 			if (world == null) {
-				AddLogEntry("Error: Configuration: There's no world named \"" + worldName
-						+ "\".  Please update your config.yml.");
+				AddLogEntry("Error: Configuration: There's no world named \"" + worldName + "\".  Please update your config.yml.");
 			} else {
 				this.config_enabledWorlds.add(world);
 			}
@@ -194,12 +237,15 @@ public class AntiXRay extends JavaPlugin {
 
 		// default for the protected blocks list
 		if (this.config_protectedBlocks.size() == 0) {
-			this.config_protectedBlocks.add(new SimpleEntry<BlockData, Integer>(new BlockData(Material.DIAMOND_ORE.toString(), Material.DIAMOND_ORE.getId(), (byte) 0), 100));
-			this.config_protectedBlocks.add(new SimpleEntry<BlockData, Integer>(new BlockData(Material.EMERALD_ORE.toString(), Material.EMERALD_ORE.getId(), (byte) 0), 50));
+			this.config_protectedBlocks.add(new SimpleEntry<BlockData, Integer>(new BlockData(Material.DIAMOND_ORE.toString(), Material.DIAMOND_ORE
+					.getId(), (byte) 0), 100));
+			this.config_protectedBlocks.add(new SimpleEntry<BlockData, Integer>(new BlockData(Material.EMERALD_ORE.toString(), Material.EMERALD_ORE
+					.getId(), (byte) 0), 50));
 		}
 
 		// write all those configuration values back to file
-		// (this writes the defaults to the config file when nothing is specified)
+		// (this writes the defaults to the config file when nothing is
+		// specified)
 		config.set("AntiXRay.Worlds", enabledWorldNames);
 		config.set("AntiXRay.NewPlayerStartingPoints", this.config_startingPoints);
 		config.set("AntiXRay.PointsEarnedPerHourPlayed", this.config_pointsPerHour);
@@ -224,61 +270,26 @@ public class AntiXRay extends JavaPlugin {
 		} catch (IOException exception) {
 			AddLogEntry("Unable to write to the configuration file at \"" + DataStore.configFilePath + "\"");
 		}
-
-		this.dataStore = new FlatFileDataStore();
-
-		// start the task to regularly give players the points they've earned for play time 20L ~ 1 second
-		DeliverPointsTask task = new DeliverPointsTask();
-		this.getServer().getScheduler().scheduleSyncRepeatingTask(this, task, 20L * 60 * 5, 20L * 60 * 5);
-
-		// register for events
-		PluginManager pluginManager = this.getServer().getPluginManager();
-
-		// player events
-		PlayerEventHandler playerEventHandler = new PlayerEventHandler(this.dataStore);
-		pluginManager.registerEvents(playerEventHandler, this);
-
-		// block events
-		BlockEventHandler blockEventHandler = new BlockEventHandler(this.dataStore);
-		pluginManager.registerEvents(blockEventHandler, this);
-
-		// entity events
-		EntityEventHandler entityEventHandler = new EntityEventHandler();
-		pluginManager.registerEvents(entityEventHandler, this);
 		
-		AddLogEntry("AntiXRay enabled.");
-	}
-
-	// on disable, close any open files and/or database connections
-	public void onDisable() {
-		// ensure all online players get their data saved
-		Player[] players = this.getServer().getOnlinePlayers();
-		for (int i = 0; i < players.length; i++) {
-			Player player = players[i];
-			String playerName = player.getName();
-			this.dataStore.savePlayerData(playerName, this.dataStore.getPlayerData(player));
-		}
-
-		this.dataStore.close();
-	}
-
-	// handles slash commands
-	public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
-		return true;
 	}
 
 	// sends a color-coded message to a player
-	static void sendMessage(Player player, ChatColor color, Messages messageID, String... args) {
-		String message = AntiXRay.instance.dataStore.getMessage(messageID, args);
-		sendMessage(player, color, message);
+	static void sendMessage(CommandSender receiver, ChatColor color, Messages messageID, String... args) {
+		String message = getMessage(messageID, args);
+		sendMessage(receiver, color, message);
+	}
+	
+	// gets a message from the datastore by the given id
+	static String getMessage(Messages messageID, String... args) {
+		return AntiXRay.instance.dataStore.getMessage(messageID, args);
 	}
 
 	// sends a color-coded message to a player
-	static void sendMessage(Player player, ChatColor color, String message) {
-		if (player == null) {
+	static void sendMessage(CommandSender receiver, ChatColor color, String message) {
+		if (receiver == null) {
 			AntiXRay.AddLogEntry(color + message);
 		} else {
-			player.sendMessage(color + message);
+			receiver.sendMessage(color + message);
 		}
 	}
 
