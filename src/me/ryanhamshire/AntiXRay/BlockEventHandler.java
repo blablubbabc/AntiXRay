@@ -125,7 +125,7 @@ public class BlockEventHandler implements Listener {
 		Block block = placeEvent.getBlockPlaced();
 		
 		//if the block's world isn't in the list of controlled worlds, ignore the event
-		if(ProtectedBlocks.isWorldProtected(block.getWorld().getName())) return;
+		if(!ProtectedBlocks.isWorldProtected(block.getWorld().getName())) return;
 		
 		//allows a player to break a block he just placed (he must have been charged points already to collect it in the first place) without cost
 		PlayerData playerData = this.dataStore.getPlayerData(player);
