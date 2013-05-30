@@ -85,7 +85,7 @@ class FlatFileDataStore extends DataStore
 				
 			//if there's any problem with the file's content, log an error message
 			catch(Exception e) {
-				 AntiXRay.AddLogEntry("Unable to load data for player \"" + playerName + "\": " + e.getMessage());			 
+				 AntiXRay.logger.severe("Unable to load data for player \"" + playerName + "\": " + e.getMessage());			 
 			}
 			
 			try {
@@ -116,7 +116,7 @@ class FlatFileDataStore extends DataStore
 		//if any problem, log it
 		catch(Exception e)
 		{
-			AntiXRay.AddLogEntry("Unexpected exception saving data for player \"" + playerName + "\": " + e.getMessage());
+			AntiXRay.logger.severe("Unexpected exception saving data for player \"" + playerName + "\": " + e.getMessage());
 		}
 		
 		try

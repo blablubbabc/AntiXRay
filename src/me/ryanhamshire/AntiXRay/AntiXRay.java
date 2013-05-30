@@ -47,7 +47,7 @@ public class AntiXRay extends JavaPlugin {
 	public static AntiXRay instance;
 
 	// for logging to the console and log file
-	private static Logger log = Logger.getLogger("Minecraft");
+	public static Logger logger;
 
 	// this handles data storage, like player data
 	public DataStore dataStore;
@@ -61,15 +61,10 @@ public class AntiXRay extends JavaPlugin {
 	public boolean config_exemptCreativeModePlayers; // whether creative mode players should be exempt from the rules
 	public boolean config_notifyOnLimitReached; // whether to notify online moderators when a player reaches his limit
 
-	// adds a server log entry
-	public static void AddLogEntry(String entry) {
-		log.info("AntiXRay: " + entry);
-	}
-
 	// initializes well... everything
 	public void onEnable() {
-
 		instance = this;
+		logger = getLogger();
 
 		// load configuration
 		loadConfig();
@@ -98,7 +93,7 @@ public class AntiXRay extends JavaPlugin {
 		// command handler
 		getCommand("antixray").setExecutor(new CommandHandler());
 		
-		AddLogEntry("AntiXRay enabled.");
+		logger.info("AntiXRay enabled.");
 	}
 
 	// on disable, close any open files and/or database connections
@@ -139,7 +134,7 @@ public class AntiXRay extends JavaPlugin {
 			String worldName = enabledWorldNames.get(i);
 			World world = this.getServer().getWorld(worldName);
 			if (world == null) {
-				AddLogEntry("Error: Configuration: There's no world named \"" + worldName + "\".  Please update your config.yml.");
+				logger.warning("Configuration: There's no world named \"" + worldName + "\".  Please update your config.yml.");
 			} else {
 				this.config_enabledWorlds.add(world);
 			}
@@ -163,30 +158,30 @@ public class AntiXRay extends JavaPlugin {
 				String customBlockName = iterator.next();
 				ConfigurationSection customBlockSection = customBlocksSection.getConfigurationSection(customBlockName);
 				if (customBlockSection == null) {
-					AntiXRay.AddLogEntry("CustomBlock information not found: " + customBlockName + ".");
+					logger.warning("CustomBlock information not found: " + customBlockName + ".");
 					continue;
 				}
 				if (!customBlockSection.contains("ID")) {
-					AntiXRay.AddLogEntry("CustomBlock 'ID' not found: " + customBlockName + ".");
+					logger.warning("CustomBlock 'ID' not found: " + customBlockName + ".");
 					continue;
 				}
 				if (!customBlockSection.isInt("ID")) {
-					AntiXRay.AddLogEntry("CustomBlock 'ID' is no number: " + customBlockName + ".");
+					logger.warning("CustomBlock 'ID' is no number: " + customBlockName + ".");
 					continue;
 				}
 				if (!customBlockSection.contains("Sub ID")) {
-					AntiXRay.AddLogEntry("CustomBlock 'Sub ID' not found: " + customBlockName + ".");
+					logger.warning("CustomBlock 'Sub ID' not found: " + customBlockName + ".");
 					continue;
 				}
 				if (!customBlockSection.isInt("Sub ID")) {
-					AntiXRay.AddLogEntry("CustomBlock 'Sub ID' is no number: " + customBlockName + ".");
+					logger.warning("CustomBlock 'Sub ID' is no number: " + customBlockName + ".");
 					continue;
 				}
 				int id = customBlockSection.getInt("ID");
 				int subidInt = customBlockSection.getInt("Sub ID", 0);
 				// range check
 				if (subidInt < -1 || subidInt > Byte.MAX_VALUE) {
-					AntiXRay.AddLogEntry("CustomBlock 'Sub ID' is no valid sub id: " + customBlockName + ".");
+					logger.warning("CustomBlock 'Sub ID' is no valid sub id: " + customBlockName + ".");
 					continue;
 				}
 				byte subid = (byte) subidInt;
@@ -223,7 +218,7 @@ public class AntiXRay extends JavaPlugin {
 				// check material name:
 				Material material = Material.getMaterial(blockName);
 				if (material == null) {
-					AntiXRay.AddLogEntry("Material not found: " + blockName + ".");
+					logger.warning("Material not found: " + blockName + ".");
 					continue;
 				} else {
 					blockData = new BlockData(blockName, material.getId(), (byte) 0);
@@ -268,7 +263,7 @@ public class AntiXRay extends JavaPlugin {
 		try {
 			config.save(DataStore.configFilePath);
 		} catch (IOException exception) {
-			AddLogEntry("Unable to write to the configuration file at \"" + DataStore.configFilePath + "\"");
+			logger.severe("Unable to write to the configuration file at \"" + DataStore.configFilePath + "\"");
 		}
 		
 	}
@@ -287,7 +282,7 @@ public class AntiXRay extends JavaPlugin {
 	// sends a color-coded message to a player
 	static void sendMessage(CommandSender receiver, ChatColor color, String message) {
 		if (receiver == null) {
-			AntiXRay.AddLogEntry(color + message);
+			logger.info(color + message);
 		} else {
 			receiver.sendMessage(color + message);
 		}

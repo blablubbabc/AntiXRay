@@ -162,7 +162,7 @@ abstract class DataStore
 			//if default is missing, log an error and use some fake data for now so that the plugin can run
 			if(messageData == null)
 			{
-				AntiXRay.AddLogEntry("Missing message for " + messageID.name() + ".  Please contact the developer.");
+				AntiXRay.logger.severe("Missing message for " + messageID.name() + ".  Please contact the developer.");
 				messageData = new CustomizableMessage(messageID, "Missing message!  ID: " + messageID.name() + ".  Please contact a server admin.", null);
 			}
 			
@@ -184,7 +184,7 @@ abstract class DataStore
 		}
 		catch(IOException exception)
 		{
-			AntiXRay.AddLogEntry("Unable to write to the configuration file at \"" + DataStore.messagesFilePath + "\"");
+			AntiXRay.logger.severe("Unable to write to the configuration file at \"" + DataStore.messagesFilePath + "\"");
 		}
 		
 		defaults.clear();

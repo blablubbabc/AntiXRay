@@ -93,7 +93,7 @@ public class BlockEventHandler implements Listener
 						playerData.reachedLimitThisSession = true;
 						
 						//make log entry
-						AntiXRay.AddLogEntry(player.getName() + " reached the mining speed limit at " + AntiXRay.getfriendlyLocationString(player.getLocation()));
+						AntiXRay.logger.info(player.getName() + " reached the mining speed limit at " + AntiXRay.getfriendlyLocationString(player.getLocation()));
 						
 						//notify online moderators
 						Player [] players = AntiXRay.instance.getServer().getOnlinePlayers();
