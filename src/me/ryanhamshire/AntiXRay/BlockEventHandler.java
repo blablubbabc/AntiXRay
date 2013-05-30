@@ -18,7 +18,7 @@
 
 package me.ryanhamshire.AntiXRay;
 
-import java.util.AbstractMap.SimpleEntry;
+import java.util.List;
 
 import org.bukkit.GameMode;
 import org.bukkit.block.Block;
@@ -30,21 +30,18 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 
 //event handlers related to blocks
-public class BlockEventHandler implements Listener 
-{
+public class BlockEventHandler implements Listener {
 	//convenience reference to singleton datastore
 	private DataStore dataStore;
 	
 	//boring typical constructor
-	public BlockEventHandler(DataStore dataStore)
-	{
+	public BlockEventHandler(DataStore dataStore) {
 		this.dataStore = dataStore;
 	}
 	
 	//when a player breaks a block...
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
-	public void onBlockBreak(BlockBreakEvent breakEvent)
-	{
+	public void onBlockBreak(BlockBreakEvent breakEvent) {
 		Player player = breakEvent.getPlayer();
 		
 		//ignore players with the bypass permission
@@ -55,29 +52,29 @@ public class BlockEventHandler implements Listener
 		
 		Block block = breakEvent.getBlock();
 		
-		//if the block's world isn't in the list of controlled worlds, ignore the event
-		if(!AntiXRay.instance.config_enabledWorlds.contains(block.getWorld())) return;
+		// get block protections for this world
+		List<BlockData> protections = ProtectedBlocks.getProtections(block.getWorld().getName());
+		
+		//if there are no protections for this world, ignore the event
+		if(protections == null || protections.isEmpty()) return;
 		
 		//allows a player to break a block he just placed (he must have been charged points already to collect it in the first place) without cost
 		PlayerData playerData = this.dataStore.getPlayerData(player);
-		if(playerData.lastPlacedBlockLocation != null && block.getLocation().equals(playerData.lastPlacedBlockLocation))
-		{
+		if(playerData.lastPlacedBlockLocation != null && block.getLocation().equals(playerData.lastPlacedBlockLocation)) {
 			playerData.lastPlacedBlockLocation = null;
 			return;
 		}
 		
+		int height = block.getLocation().getBlockY();
+		
 		//look for the block's type in the list of protected blocks
-		for(int i = 0; i < AntiXRay.instance.config_protectedBlocks.size(); i++)
-		{
+		for(BlockData blockData : protections) {
 			//if it's in the list, consider whether this player should be permitted to break the block
-			SimpleEntry<BlockData, Integer> entry = AntiXRay.instance.config_protectedBlocks.get(i);
-			if(entry.getKey().isEqual(block))
-			{
+			if(blockData.isOfSameType(block) && height <= blockData.getHeight()) {
 				//if he doesn't have enough points
-				if(entry.getValue() > 0 && playerData.points < entry.getValue())
-				{
+				if(blockData.getValue() > 0 && playerData.points < blockData.getValue()) {
 					//estimate how long it will be before he can break this block
-					int minutesUntilBreak = (int)((entry.getValue() - playerData.points) / (float)(AntiXRay.instance.config_pointsPerHour) * 60);
+					int minutesUntilBreak = (int)((blockData.getValue() - playerData.points) / (float)(AntiXRay.instance.config_pointsPerHour) * 60);
 					if(minutesUntilBreak == 0) minutesUntilBreak = 1;
 					
 					//inform him
@@ -87,8 +84,7 @@ public class BlockEventHandler implements Listener
 					breakEvent.setCancelled(true);
 					
 					//if configured to do so, make an entry in the log and notify any online moderators
-					if(AntiXRay.instance.config_notifyOnLimitReached && !playerData.reachedLimitThisSession)
-					{
+					if(AntiXRay.instance.config_notifyOnLimitReached && !playerData.reachedLimitThisSession) {
 						//avoid doing this twice in one play session for this player
 						playerData.reachedLimitThisSession = true;
 						
@@ -97,21 +93,16 @@ public class BlockEventHandler implements Listener
 						
 						//notify online moderators
 						Player [] players = AntiXRay.instance.getServer().getOnlinePlayers();
-						for(int j = 0; j < players.length; j++)
-						{
-							Player moderator = players[j];
-							if(moderator.hasPermission("antixray.monitorxrayers"))
-							{
+						for(int i = 0; i < players.length; i++) {
+							Player moderator = players[i];
+							if(moderator.hasPermission("antixray.monitorxrayers")) {
 								AntiXRay.sendMessage(moderator, TextMode.Instr, Messages.AdminNotification, player.getName());
 							}
 						}
 					}
-				}
-				
-				//otherwise, subtract the value of the block from his points
-				else
-				{
-					playerData.points -= entry.getValue();					
+				} else {
+					//otherwise, subtract the value of the block from his points
+					playerData.points -= blockData.getValue();					
 				}
 				
 				//once a match is found, no need to look farther
@@ -122,8 +113,7 @@ public class BlockEventHandler implements Listener
 	
 	//when a player places a block...
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-	public void onBlockPlace(BlockPlaceEvent placeEvent)
-	{
+	public void onBlockPlace(BlockPlaceEvent placeEvent) {
 		Player player = placeEvent.getPlayer();
 		
 		//ignore players with the bypass permission
@@ -135,7 +125,7 @@ public class BlockEventHandler implements Listener
 		Block block = placeEvent.getBlockPlaced();
 		
 		//if the block's world isn't in the list of controlled worlds, ignore the event
-		if(!AntiXRay.instance.config_enabledWorlds.contains(block.getWorld())) return;
+		if(ProtectedBlocks.isWorldProtected(block.getWorld().getName())) return;
 		
 		//allows a player to break a block he just placed (he must have been charged points already to collect it in the first place) without cost
 		PlayerData playerData = this.dataStore.getPlayerData(player);

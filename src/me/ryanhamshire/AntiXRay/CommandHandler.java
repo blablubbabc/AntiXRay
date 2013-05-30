@@ -25,7 +25,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 // handles slash commands
-public class CommandHandler implements CommandExecutor {
+class CommandHandler implements CommandExecutor {
 
 	private static final ChatColor CMD = ChatColor.YELLOW;
 	private static final ChatColor DESC = ChatColor.BLUE;

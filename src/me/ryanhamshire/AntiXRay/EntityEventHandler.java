@@ -19,7 +19,6 @@
 package me.ryanhamshire.AntiXRay;
 
 import java.util.List;
-import java.util.AbstractMap.SimpleEntry;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -30,33 +29,30 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityExplodeEvent;
 
 //handles events related to entities
-class EntityEventHandler implements Listener
-{
+class EntityEventHandler implements Listener {
 	//when there's an explosion...
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
-	public void onEntityExplode(EntityExplodeEvent explodeEvent)
-	{		
+	public void onEntityExplode(EntityExplodeEvent explodeEvent) {		
 		List<Block> blocks = explodeEvent.blockList();
 		Location location = explodeEvent.getLocation();
 		
+		// get block protections for this world
+		List<BlockData> protections = ProtectedBlocks.getProtections(location.getWorld().getName());
+		
 		//don't do anything when the explosion world isn't one of the controlled worlds
-		if(!AntiXRay.instance.config_enabledWorlds.contains(location.getWorld())) return;
+		if (protections == null || protections.isEmpty()) return;
 		
 		//FEATURE: don't allow players to circumvent the anti xray limitation by using explosives to anonymously break a block
 		
 		//for each block that will be broken by the explosion
-		for(int j = 0; j < blocks.size(); j++)
-		{
-			Block block = blocks.get(j);
-		
+		for (int i = 0; i < blocks.size(); i++) {
+			Block block = blocks.get(i);
+			int height = block.getLocation().getBlockY();
 			//look for that block's type in the list of protected blocks
-			for(int i = 0; i < AntiXRay.instance.config_protectedBlocks.size(); i++)
-			{			
+			for (BlockData blockData : protections) {			
 				//if it's type is in our protected blocks list, remove the block from the explosion list (so it doesn't break)
-				SimpleEntry<BlockData, Integer> entry = AntiXRay.instance.config_protectedBlocks.get(i);
-				if(entry.getKey().isEqual(block) && entry.getValue() > 0)
-				{
-					blocks.remove(j--);
+				if (blockData.isOfSameType(block) && height <= blockData.getHeight() && blockData.getValue() > 0) {
+					blocks.remove(i--);
 				}
 			}
 		}
