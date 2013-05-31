@@ -313,7 +313,15 @@ public class AntiXRay extends JavaPlugin {
 				
 				// write default world data to config:
 				String worldNode = "AntiXRay.Worlds." + worldName;
-				config.set(worldNode, "");
+				if (worldName.equalsIgnoreCase("world")) {
+					String worldOresNode = worldNode + ".ProtectedBlocks";
+					config.set(worldOresNode + "." + Material.DIAMOND_ORE.name() + ".Value", 100);
+					config.set(worldOresNode + "." + Material.DIAMOND_ORE.name() + ".MaxHeight", 20);
+				} else if (worldName.equalsIgnoreCase("world_nether") || worldName.equalsIgnoreCase("world_the_end")) {
+					config.set(worldNode + ".DefaultMaxHeight", 256);
+				} else {
+					config.set(worldNode, "");
+				}
 			}
 		}
 		
