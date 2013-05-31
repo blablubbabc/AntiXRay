@@ -26,3 +26,6 @@ permissions:
     antixray.monitorxrayers:
         description: If configured, allows a player to receive notifications about players who reach their mining speed limit.
         default: op
+    antixray.help:
+        description: Allows a player to view the help page which contains information about the commands.
+        default: op
