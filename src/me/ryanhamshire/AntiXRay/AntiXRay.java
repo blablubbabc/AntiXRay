@@ -128,10 +128,10 @@ public class AntiXRay extends JavaPlugin {
 		
 		// default ore values:
 		
-		// // default height: only blocks broken below this height will get checked
-		int defaultHeight = config.getInt("DefaultHeight", 63);
+		// // default max height: only checks for blocks broken below this height
+		int defaultHeight = config.getInt("DefaultMaxHeight", 63);
 		// write value back to config (for defaults):
-		config.set("AntiXRay.DefaultHeight", defaultHeight);
+		config.set("AntiXRay.DefaultMaxHeight", defaultHeight);
 		
 		// // load custom block definitions:
 		Map<String,  BlockData> customBlocks = new HashMap<String, BlockData>();
@@ -288,6 +288,9 @@ public class AntiXRay extends JavaPlugin {
 					
 					// write world specific data back to config:
 					String worldNode = "AntiXRay.Worlds." + worldName;
+					// first remove all data (to remove invalid stuff):
+					config.set(worldNode, null);
+					// then set all world data:
 					if (worldHeight != defaultHeight) config.set(worldNode + ".DefaultMaxHeight", worldHeight);
 					String worldOresNode = worldNode + ".ProtectedBlocks";
 					for (Entry<String, BlockData> entry : worldSpecificOres.entrySet()) {
