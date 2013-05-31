@@ -243,6 +243,12 @@ public class AntiXRay extends JavaPlugin {
 				
 				// world specific informations:
 				ConfigurationSection worldSection = worldsSection.getConfigurationSection(worldName);
+				
+				// write world name back to config:
+				String worldNode = "AntiXRay.Worlds." + worldName;
+				// first remove all data (to remove invalid stuff), but still remain the worldname:
+				config.set(worldNode, "");
+				
 				if (worldSection != null) {
 					int worldHeight = worldSection.getInt("DefaultMaxHeight", defaultHeight);
 					
@@ -286,11 +292,7 @@ public class AntiXRay extends JavaPlugin {
 						worldOres.putAll(worldSpecificOres);
 					}
 					
-					// write world specific data back to config:
-					String worldNode = "AntiXRay.Worlds." + worldName;
-					// first remove all data (to remove invalid stuff):
-					config.set(worldNode, null);
-					// then set all world data:
+					// then set all world specific data:
 					if (worldHeight != defaultHeight) config.set(worldNode + ".DefaultMaxHeight", worldHeight);
 					String worldOresNode = worldNode + ".ProtectedBlocks";
 					for (Entry<String, BlockData> entry : worldSpecificOres.entrySet()) {
