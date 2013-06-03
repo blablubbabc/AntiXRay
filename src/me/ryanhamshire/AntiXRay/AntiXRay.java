@@ -286,7 +286,7 @@ public class AntiXRay extends JavaPlugin {
 										continue;
 									} else {
 										// initialize BlockData with id from the found material and subid of 0 and add it to the world ores:
-										worldSpecificOres.put(oreName, new BlockData(material.getId(), (byte) 0, value, worldHeight));
+										worldSpecificOres.put(oreName, new BlockData(material.getId(), (byte) 0, value, height));
 									}
 								}
 								
