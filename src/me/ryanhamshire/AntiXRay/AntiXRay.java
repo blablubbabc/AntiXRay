@@ -53,6 +53,7 @@ public class AntiXRay extends JavaPlugin {
 	public int config_pointsPerHour; // how quickly players earn "points" which allow them to mine valuables
 	public int config_maxPoints; // the upper limit on points
 	public int config_startingPoints; // initial points for players who are new to the server
+	public boolean config_ignoreMaxPointsForBlockRatio; // whether it shall ignore if a player has more than maxPoints points when receiving them via breaking blocks (block ratio)
 	public boolean config_exemptCreativeModePlayers; // whether creative mode players should be exempt from the rules
 	public boolean config_notifyOnLimitReached; // whether to notify online moderators when a player reaches his limit
 
@@ -113,6 +114,8 @@ public class AntiXRay extends JavaPlugin {
 		this.config_pointsPerHour = config.getInt("AntiXRay.PointsEarnedPerHourPlayed", 800);
 		this.config_maxPoints = config.getInt("AntiXRay.MaximumPoints", 1600);
 
+		this.config_ignoreMaxPointsForBlockRatio = config.getBoolean("AntiXRay.IgnoreMaxPointsForBlockRatio", true);
+		
 		this.config_exemptCreativeModePlayers = config.getBoolean("AntiXRay.ExemptCreativeModePlayers", true);
 
 		this.config_notifyOnLimitReached = config.getBoolean("AntiXRay.NotifyOnMiningLimitReached", false);
@@ -121,6 +124,8 @@ public class AntiXRay extends JavaPlugin {
 		config.set("AntiXRay.NewPlayerStartingPoints", this.config_startingPoints);
 		config.set("AntiXRay.PointsEarnedPerHourPlayed", this.config_pointsPerHour);
 		config.set("AntiXRay.MaximumPoints", this.config_maxPoints);
+		
+		config.set("AntiXRay.IgnoreMaxPointsForBlockRatio", this.config_ignoreMaxPointsForBlockRatio);
 
 		config.set("AntiXRay.ExemptCreativeModePlayers", this.config_exemptCreativeModePlayers);
 

@@ -102,7 +102,9 @@ public class BlockEventHandler implements Listener {
 					}
 				} else {
 					//otherwise, subtract the value of the block from his points
-					playerData.points -= blockData.getValue();					
+					playerData.points -= blockData.getValue();
+					//make sure that the players point are lower than the maxPoints limit:
+					if (!AntiXRay.instance.config_ignoreMaxPointsForBlockRatio && playerData.points > AntiXRay.instance.config_maxPoints) playerData.points =  AntiXRay.instance.config_maxPoints;
 				}
 				
 				//once a match is found, no need to look farther
