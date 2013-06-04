@@ -74,7 +74,8 @@ abstract class DataStore
 		return this.playerNameToPlayerDataMap.get(playerName);
 	}
 	
-	//returns PlayerData for a player with the given name and RETURNS NULL if no PlayerData was found for this name
+	//returns PlayerData for a player with the given name and RETURNS NULL if no PlayerData was found for this name. 
+	// The loaded playerData will not be saved in memory and is meant for one-time lookup purposes.
 	public PlayerData getPlayerDataIfExist(String playerName) {
 		// first, look in memory
 		PlayerData playerData = this.playerNameToPlayerDataMap.get(playerName);
