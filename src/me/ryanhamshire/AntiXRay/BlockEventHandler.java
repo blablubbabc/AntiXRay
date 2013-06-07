@@ -39,8 +39,8 @@ public class BlockEventHandler implements Listener {
 		this.dataStore = dataStore;
 	}
 	
-	//when a player breaks a block...
-	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+	//when a player breaks a block... priority high, so other plugins can first cancel block breaking
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
 	public void onBlockBreak(BlockBreakEvent breakEvent) {
 		Player player = breakEvent.getPlayer();
 		
