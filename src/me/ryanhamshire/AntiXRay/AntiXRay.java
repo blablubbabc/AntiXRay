@@ -27,7 +27,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -354,10 +353,10 @@ public class AntiXRay extends JavaPlugin {
 		
 	}
 
-	// sends a color-coded message to a player
-	static void sendMessage(CommandSender receiver, ChatColor color, Messages messageID, String... args) {
+	// sends a message to a player
+	static void sendMessage(CommandSender receiver, Messages messageID, String... args) {
 		String message = getMessage(messageID, args);
-		sendMessage(receiver, color, message);
+		sendMessage(receiver, message);
 	}
 	
 	// gets a message from the datastore by the given id
@@ -365,12 +364,12 @@ public class AntiXRay extends JavaPlugin {
 		return AntiXRay.instance.dataStore.getMessage(messageID, args);
 	}
 
-	// sends a color-coded message to a player
-	static void sendMessage(CommandSender receiver, ChatColor color, String message) {
+	// sends a message to a player
+	static void sendMessage(CommandSender receiver, String message) {
 		if (receiver == null) {
-			logger.info(color + message);
+			logger.info(message);
 		} else {
-			receiver.sendMessage(color + message);
+			receiver.sendMessage(message);
 		}
 	}
 

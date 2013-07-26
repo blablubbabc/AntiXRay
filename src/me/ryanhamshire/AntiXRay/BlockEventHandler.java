@@ -78,7 +78,7 @@ public class BlockEventHandler implements Listener {
 					if(minutesUntilBreak == 0) minutesUntilBreak = 1;
 					
 					//inform him
-					AntiXRay.sendMessage(player, TextMode.Instr, Messages.CantBreakYet, String.valueOf(minutesUntilBreak));
+					AntiXRay.sendMessage(player, Messages.CantBreakYet, String.valueOf(minutesUntilBreak));
 					
 					//cancel the breakage
 					breakEvent.setCancelled(true);
@@ -96,7 +96,7 @@ public class BlockEventHandler implements Listener {
 						for(int i = 0; i < players.length; i++) {
 							Player moderator = players[i];
 							if(moderator.hasPermission("antixray.monitorxrayers")) {
-								AntiXRay.sendMessage(moderator, TextMode.Instr, Messages.AdminNotification, player.getName());
+								AntiXRay.sendMessage(moderator, Messages.AdminNotification, player.getName());
 							}
 						}
 					}

@@ -35,7 +35,7 @@ class CommandHandler implements CommandExecutor {
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (args.length == 0 || args[0].equalsIgnoreCase("help") || args[0].equalsIgnoreCase("?")) {
 			if (sender.hasPermission("antixray.help")) sendHelp(sender);
-			else AntiXRay.sendMessage(sender, TextMode.Err, Messages.NoPermission);
+			else AntiXRay.sendMessage(sender, Messages.NoPermission);
 			return true;
 		} else {
 			if (args[0].equalsIgnoreCase("reload")) {
@@ -45,31 +45,31 @@ class CommandHandler implements CommandExecutor {
 					// reload messages
 					AntiXRay.instance.dataStore.initialize();
 					
-					AntiXRay.sendMessage(sender, TextMode.Success, Messages.ReloadDone);
-				} else AntiXRay.sendMessage(sender, TextMode.Err, Messages.NoPermission);
+					AntiXRay.sendMessage(sender, Messages.ReloadDone);
+				} else AntiXRay.sendMessage(sender, Messages.NoPermission);
 				
 				return true;
 			} else if (args[0].equalsIgnoreCase("check") || args[0].equalsIgnoreCase("points")) {
 				if (!(sender instanceof Player)) {
-					AntiXRay.sendMessage(sender, TextMode.Err, Messages.OnlyAsPlayer);
+					AntiXRay.sendMessage(sender, Messages.OnlyAsPlayer);
 				} else {
 					Player player = (Player) sender;
 					if (args.length == 1) {
 						if (sender.hasPermission("antixray.check.self")) {
 							int points = AntiXRay.instance.dataStore.getPlayerData(player).points;
-							AntiXRay.sendMessage(player, TextMode.Instr, Messages.CurrentPoints, player.getName(), String.valueOf(points));
+							AntiXRay.sendMessage(player, Messages.CurrentPoints, player.getName(), String.valueOf(points));
 							
-						} else AntiXRay.sendMessage(sender, TextMode.Err, Messages.NoPermission);
+						} else AntiXRay.sendMessage(sender, Messages.NoPermission);
 					} else {
 						if (sender.hasPermission("antixray.check.others")) {
 							String targetName = args[1];
 							PlayerData playerData = AntiXRay.instance.dataStore.getPlayerDataIfExist(targetName);
 							if (playerData == null) {
-								AntiXRay.sendMessage(player, TextMode.Instr, Messages.NoPlayerDataFound, targetName);
+								AntiXRay.sendMessage(player, Messages.NoPlayerDataFound, targetName);
 							} else {
-								AntiXRay.sendMessage(player, TextMode.Instr, Messages.CurrentPoints, targetName, String.valueOf(playerData.points));
+								AntiXRay.sendMessage(player, Messages.CurrentPoints, targetName, String.valueOf(playerData.points));
 							}
-						} else AntiXRay.sendMessage(sender, TextMode.Err, Messages.NoPermission);
+						} else AntiXRay.sendMessage(sender, Messages.NoPermission);
 					}	
 				}
 				

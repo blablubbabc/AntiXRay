@@ -21,6 +21,7 @@ package me.ryanhamshire.AntiXRay;
 import java.io.*;
 import java.util.*;
 
+import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -95,7 +96,7 @@ abstract class DataStore
 	}
 	
 	int getDefaultPoints(boolean hasPlayedBefore) {
-		if(!hasPlayedBefore)
+		if (!hasPlayedBefore)
 		{
 			return AntiXRay.instance.config_startingPoints;
 		}
@@ -134,44 +135,47 @@ abstract class DataStore
 	//loads user-facing messages from the messages.yml configuration file into memory
 	private void loadMessages() 
 	{
-		Messages [] messageIDs = Messages.values();
+		Messages[] messageIDs = Messages.values();
 		this.messages = new String[Messages.values().length];
 		
 		HashMap<String, CustomizableMessage> defaults = new HashMap<String, CustomizableMessage>();
 		
 		//initialize defaults
-		this.addDefault(defaults, Messages.CantBreakYet, "Wow, you're good at mining!  You have to wait about {0} minutes to break this block.  If you wait longer, you can mine even more of this.  Consider taking a break from mining to do something else, like building or exploring.  This mining speed limit keeps our ores safe from cheaters.  :)", "0: minutes until the block can be broken");
-		this.addDefault(defaults, Messages.AdminNotification, "{0} reached the mining speed limit.", "0: player name");
-		this.addDefault(defaults, Messages.NoPermission, "You have no permission for that.", null);
-		this.addDefault(defaults, Messages.OnlyAsPlayer, "This command can only be executed as a player.", null);
-		this.addDefault(defaults, Messages.CommandReload, "Reloads the configuration and messages.", null);
-		this.addDefault(defaults, Messages.ReloadDone, "AntiXRay was reloaded. Check the log if there were any errors.", null);
-		this.addDefault(defaults, Messages.CommandPoints, "Shows you your or another players current points.", null);
-		this.addDefault(defaults, Messages.CurrentPoints, "{0} currently has {1} points.", "0: player name  1: the players points");
-		this.addDefault(defaults, Messages.NoPlayerDataFound, "No PlayerData was found for '{0}'.", "0: player name");
+		this.addDefault(defaults, Messages.CantBreakYet, "&eWow, you're good at mining!  You have to wait about {0} minutes to break this block.  If you wait longer, you can mine even more of this.  Consider taking a break from mining to do something else, like building or exploring.  This mining speed limit keeps our ores safe from cheaters.  :)", "0: minutes until the block can be broken");
+		this.addDefault(defaults, Messages.AdminNotification, "&e{0} reached the mining speed limit.", "0: player name");
+		this.addDefault(defaults, Messages.NoPermission, "&cYou have no permission for that.", null);
+		this.addDefault(defaults, Messages.OnlyAsPlayer, "&cThis command can only be executed as a player.", null);
+		this.addDefault(defaults, Messages.CommandReload, "&9Reloads the configuration and messages.", null);
+		this.addDefault(defaults, Messages.ReloadDone, "&aAntiXRay was reloaded. Check the log if there were any errors.", null);
+		this.addDefault(defaults, Messages.CommandPoints, "&9Shows you your or another players current points.", null);
+		this.addDefault(defaults, Messages.CurrentPoints, "&e{0} currently has {1} points.", "0: player name  1: the players points");
+		this.addDefault(defaults, Messages.NoPlayerDataFound, "&eNo PlayerData was found for '{0}'.", "0: player name");
 		
 		//load the config file
 		FileConfiguration config = YamlConfiguration.loadConfiguration(new File(messagesFilePath));
 		
 		//for each message ID
-		for(int i = 0; i < messageIDs.length; i++)
+		for (int i = 0; i < messageIDs.length; i++)
 		{
 			//get default for this message
 			Messages messageID = messageIDs[i];
 			CustomizableMessage messageData = defaults.get(messageID.name());
 			
 			//if default is missing, log an error and use some fake data for now so that the plugin can run
-			if(messageData == null)
+			if (messageData == null)
 			{
 				AntiXRay.logger.severe("Missing message for " + messageID.name() + ".  Please contact the developer.");
 				messageData = new CustomizableMessage(messageID, "Missing message!  ID: " + messageID.name() + ".  Please contact a server admin.", null);
 			}
 			
 			//read the message from the file, use default if necessary
-			this.messages[messageID.ordinal()] = config.getString("Messages." + messageID.name() + ".Text", messageData.text);
-			config.set("Messages." + messageID.name() + ".Text", this.messages[messageID.ordinal()]);
+			String message = config.getString("Messages." + messageID.name() + ".Text", messageData.text);
+			config.set("Messages." + messageID.name() + ".Text", message);
 			
-			if(messageData.notes != null)
+			//colorize and store message
+			this.messages[messageID.ordinal()] = ChatColor.translateAlternateColorCodes('&', message);
+			
+			if (messageData.notes != null)
 			{
 				messageData.notes = config.getString("Messages." + messageID.name() + ".Notes", messageData.notes);
 				config.set("Messages." + messageID.name() + ".Notes", messageData.notes);
@@ -205,7 +209,7 @@ abstract class DataStore
 	{
 		String message = messages[messageID.ordinal()];
 		
-		for(int i = 0; i < args.length; i++)
+		for (int i = 0; i < args.length; i++)
 		{
 			String param = args[i];
 			message = message.replace("{" + i + "}", param);
