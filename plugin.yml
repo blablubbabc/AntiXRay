@@ -23,6 +23,9 @@ permissions:
     antixray.check.self:
         description: Allows a player to view his amount of remaining mining points.
         default: op
+    antixray.set:
+        description: Allows the setting of a players stored values, like the amount of remaining mining points.
+        default: op
     antixray.monitorxrayers:
         description: If configured, allows a player to receive notifications about players who reach their mining speed limit.
         default: op
