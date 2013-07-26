@@ -141,8 +141,8 @@ abstract class DataStore
 		HashMap<String, CustomizableMessage> defaults = new HashMap<String, CustomizableMessage>();
 		
 		//initialize defaults
-		this.addDefault(defaults, Messages.CantBreakYet, "&eWow, you're good at mining!  You have to wait about {0} minutes to break this block.  If you wait longer, you can mine even more of this.  Consider taking a break from mining to do something else, like building or exploring.  This mining speed limit keeps our ores safe from cheaters.  :)", "0: minutes until the block can be broken");
-		this.addDefault(defaults, Messages.AdminNotification, "&e{0} reached the mining speed limit.", "0: player name");
+		this.addDefault(defaults, Messages.CantBreakYet, "&eWow, you're good at mining!  You have to wait about {0} minutes to break this block.  If you wait longer, you can mine even more of this.  Consider taking a break from mining to do something else, like building or exploring.  This mining speed limit keeps our ores safe from cheaters.  :)", "0: minutes until the block can be broken  1: how often the player has already reached his limit (unused by default)");
+		this.addDefault(defaults, Messages.AdminNotification, "&e{0} reached the mining speed limit. He already reached it about {1} times.", "0: player name  1: how often the player has already reached his limit");
 		this.addDefault(defaults, Messages.NoPermission, "&cYou have no permission for that.", null);
 		this.addDefault(defaults, Messages.OnlyAsPlayer, "&cThis command can only be executed as a player.", null);
 		this.addDefault(defaults, Messages.CommandHelpHeader, "&2--- &4AntiXRay &2---", null);

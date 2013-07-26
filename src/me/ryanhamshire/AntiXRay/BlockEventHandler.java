@@ -73,15 +73,7 @@ public class BlockEventHandler implements Listener {
 			if(blockData.isOfSameType(block) && height <= blockData.getHeight()) {
 				//if he doesn't have enough points
 				if(blockData.getValue() > 0 && playerData.points < blockData.getValue()) {
-					//estimate how long it will be before he can break this block
-					int minutesUntilBreak = (int)((blockData.getValue() - playerData.points) / (float)(AntiXRay.instance.config_pointsPerHour) * 60);
-					if(minutesUntilBreak == 0) minutesUntilBreak = 1;
-					
-					//inform him
-					AntiXRay.sendMessage(player, Messages.CantBreakYet, String.valueOf(minutesUntilBreak));
-					
-					//cancel the breakage
-					breakEvent.setCancelled(true);
+					String reachedLimitCounterString = String.valueOf(playerData.reachedLimitCount);
 					
 					if (!playerData.reachedLimitThisSession) {
 						//avoid doing this twice in one play session for this player
@@ -89,6 +81,8 @@ public class BlockEventHandler implements Listener {
 						
 						// increment reached-limit-counter
 						playerData.reachedLimitCount += 1;
+						// update reachedLimitCounter string
+						reachedLimitCounterString = String.valueOf(playerData.reachedLimitCount);
 						
 						//if configured to do so, make an entry in the log and notify any online moderators
 						if(AntiXRay.instance.config_notifyOnLimitReached) {
@@ -100,11 +94,22 @@ public class BlockEventHandler implements Listener {
 							for(int i = 0; i < players.length; i++) {
 								Player moderator = players[i];
 								if(moderator.hasPermission("antixray.monitorxrayers")) {
-									AntiXRay.sendMessage(moderator, Messages.AdminNotification, player.getName());
+									AntiXRay.sendMessage(moderator, Messages.AdminNotification, player.getName(), reachedLimitCounterString);
 								}
 							}
 						}	
 					}
+					
+					//estimate how long it will be before he can break this block
+					int minutesUntilBreak = (int)((blockData.getValue() - playerData.points) / (float)(AntiXRay.instance.config_pointsPerHour) * 60);
+					if(minutesUntilBreak == 0) minutesUntilBreak = 1;
+					
+					//inform him
+					AntiXRay.sendMessage(player, Messages.CantBreakYet, String.valueOf(minutesUntilBreak), reachedLimitCounterString);
+					
+					//cancel the breakage
+					breakEvent.setCancelled(true);
+					
 				} else {
 					//otherwise, subtract the value of the block from his points
 					playerData.points -= blockData.getValue();
