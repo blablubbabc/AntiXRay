@@ -81,8 +81,8 @@ class FlatFileDataStore extends DataStore
 				
 				//convert that to numbers and store it
 				playerData.points = Integer.parseInt(pointsString);
-				//if the file is in the old format and doesn't contain the information -> initialize it with 0
-				playerData.reachedLimitCount = reachedLimitCountString == null ? 0 : Integer.parseInt(reachedLimitCountString);
+				//if the file is in the old format and doesn't contain the information, the playerData will automatically initialized with 0
+				if (reachedLimitCountString != null) playerData.reachedLimitCount = Integer.parseInt(reachedLimitCountString);
 				
 				inStream.close();
 			}

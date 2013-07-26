@@ -84,14 +84,14 @@ public class BlockEventHandler implements Listener {
 					breakEvent.setCancelled(true);
 					
 					if (!playerData.reachedLimitThisSession) {
+						//avoid doing this twice in one play session for this player
+						playerData.reachedLimitThisSession = true;
+						
 						// increment reached-limit-counter
-						playerData.reachedLimitCount++;
+						playerData.reachedLimitCount += 1;
 						
 						//if configured to do so, make an entry in the log and notify any online moderators
 						if(AntiXRay.instance.config_notifyOnLimitReached) {
-							//avoid doing this twice in one play session for this player
-							playerData.reachedLimitThisSession = true;
-							
 							//make log entry
 							AntiXRay.logger.info(player.getName() + " reached the mining speed limit at " + AntiXRay.getfriendlyLocationString(player.getLocation()));
 							
