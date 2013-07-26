@@ -83,25 +83,27 @@ public class BlockEventHandler implements Listener {
 					//cancel the breakage
 					breakEvent.setCancelled(true);
 					
-					//if configured to do so, make an entry in the log and notify any online moderators
-					if(AntiXRay.instance.config_notifyOnLimitReached && !playerData.reachedLimitThisSession) {
-						//avoid doing this twice in one play session for this player
-						playerData.reachedLimitThisSession = true;
-						
+					if (!playerData.reachedLimitThisSession) {
 						// increment reached-limit-counter
 						playerData.reachedLimitCount++;
 						
-						//make log entry
-						AntiXRay.logger.info(player.getName() + " reached the mining speed limit at " + AntiXRay.getfriendlyLocationString(player.getLocation()));
-						
-						//notify online moderators
-						Player [] players = AntiXRay.instance.getServer().getOnlinePlayers();
-						for(int i = 0; i < players.length; i++) {
-							Player moderator = players[i];
-							if(moderator.hasPermission("antixray.monitorxrayers")) {
-								AntiXRay.sendMessage(moderator, Messages.AdminNotification, player.getName());
+						//if configured to do so, make an entry in the log and notify any online moderators
+						if(AntiXRay.instance.config_notifyOnLimitReached) {
+							//avoid doing this twice in one play session for this player
+							playerData.reachedLimitThisSession = true;
+							
+							//make log entry
+							AntiXRay.logger.info(player.getName() + " reached the mining speed limit at " + AntiXRay.getfriendlyLocationString(player.getLocation()));
+							
+							//notify online moderators
+							Player [] players = AntiXRay.instance.getServer().getOnlinePlayers();
+							for(int i = 0; i < players.length; i++) {
+								Player moderator = players[i];
+								if(moderator.hasPermission("antixray.monitorxrayers")) {
+									AntiXRay.sendMessage(moderator, Messages.AdminNotification, player.getName());
+								}
 							}
-						}
+						}	
 					}
 				} else {
 					//otherwise, subtract the value of the block from his points
