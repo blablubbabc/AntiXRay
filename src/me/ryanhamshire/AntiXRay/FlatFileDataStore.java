@@ -76,9 +76,13 @@ class FlatFileDataStore extends DataStore
 				
 				//first line is points
 				String pointsString = inStream.readLine();
+				//second line is, how often the player has already reached his limit: can be null, if the files are not containing this information yet
+				String reachedLimitCountString = inStream.readLine();
 				
-				//convert that to a number and store it
+				//convert that to numbers and store it
 				playerData.points = Integer.parseInt(pointsString);
+				//if the file is in the old format and doesn't contain the information -> initialize it with 0
+				playerData.reachedLimitCount = reachedLimitCountString == null ? 0 : Integer.parseInt(reachedLimitCountString);
 				
 				inStream.close();
 			}
@@ -110,7 +114,11 @@ class FlatFileDataStore extends DataStore
 			
 			//first line is available points
 			outStream.write(String.valueOf(playerData.points));
-			outStream.newLine();			
+			outStream.newLine();
+			
+			//second line is, how often the player has already reached his limit
+			outStream.write(String.valueOf(playerData.reachedLimitCount));
+			outStream.newLine();		
 		}		
 		
 		//if any problem, log it

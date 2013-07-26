@@ -145,11 +145,20 @@ abstract class DataStore
 		this.addDefault(defaults, Messages.AdminNotification, "&e{0} reached the mining speed limit.", "0: player name");
 		this.addDefault(defaults, Messages.NoPermission, "&cYou have no permission for that.", null);
 		this.addDefault(defaults, Messages.OnlyAsPlayer, "&cThis command can only be executed as a player.", null);
-		this.addDefault(defaults, Messages.CommandReload, "&9Reloads the configuration and messages.", null);
+		this.addDefault(defaults, Messages.CommandHelpHeader, "&2--- &4AntiXRay &2---", null);
+		this.addDefault(defaults, Messages.CommandReloadCmd, "&e/antixray reload", null);
+		this.addDefault(defaults, Messages.CommandReloadDesc, "&9     - Reloads the configuration and messages.", null);
 		this.addDefault(defaults, Messages.ReloadDone, "&aAntiXRay was reloaded. Check the log if there were any errors.", null);
-		this.addDefault(defaults, Messages.CommandPoints, "&9Shows you your or another players current points.", null);
+		this.addDefault(defaults, Messages.CommandCheckCmd, "&e/antixray check [player]", null);
+		this.addDefault(defaults, Messages.CommandCheckDesc, "&9     - Shows you your or another players current points.", null);
 		this.addDefault(defaults, Messages.CurrentPoints, "&e{0} currently has {1} points.", "0: player name  1: the players points");
+		this.addDefault(defaults, Messages.ReachedLimitCount, "&e{0} has reached his limit {1} times.", "0: player name  1: how often the player has already reached his limit");
 		this.addDefault(defaults, Messages.NoPlayerDataFound, "&eNo PlayerData was found for '{0}'.", "0: player name");
+		this.addDefault(defaults, Messages.CommandSetCmd, "&e/antixray set <player> <points|counter> <value>", null);
+		this.addDefault(defaults, Messages.CommandSetDesc, "&9     - Sets the players points or counter value.", null);
+		this.addDefault(defaults, Messages.InvalidNumber, "&c'{0}' is not a valid number.", "0: the invalid argument");
+		this.addDefault(defaults, Messages.ChangesAreDone, "&aChanges were successfully made.", null);
+		
 		
 		//load the config file
 		FileConfiguration config = YamlConfiguration.loadConfiguration(new File(messagesFilePath));

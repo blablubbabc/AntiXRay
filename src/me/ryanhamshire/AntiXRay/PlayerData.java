@@ -25,6 +25,7 @@ public class PlayerData
 {
 	//a player's "ore score", which determines whether or not he can break a specific block type
 	public int points = AntiXRay.instance.config_startingPoints;
+	public int reachedLimitCount = 0;
 	
 	//where this player was the last time we checked on him for earning points
 	public Location lastAfkCheckLocation = null;

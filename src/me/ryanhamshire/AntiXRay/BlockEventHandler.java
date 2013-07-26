@@ -88,6 +88,9 @@ public class BlockEventHandler implements Listener {
 						//avoid doing this twice in one play session for this player
 						playerData.reachedLimitThisSession = true;
 						
+						// increment reached-limit-counter
+						playerData.reachedLimitCount++;
+						
 						//make log entry
 						AntiXRay.logger.info(player.getName() + " reached the mining speed limit at " + AntiXRay.getfriendlyLocationString(player.getLocation()));
 						

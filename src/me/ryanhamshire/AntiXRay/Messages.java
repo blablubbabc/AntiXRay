@@ -24,9 +24,17 @@ public enum Messages
 	AdminNotification,
 	NoPermission,
 	OnlyAsPlayer,
-	CommandReload,
+	CommandHelpHeader,
+	CommandReloadCmd,
+	CommandReloadDesc,
 	ReloadDone,
-	CommandPoints,
+	CommandCheckCmd,
+	CommandCheckDesc,
 	CurrentPoints,
-	NoPlayerDataFound;
+	ReachedLimitCount,
+	NoPlayerDataFound,
+	CommandSetCmd,
+	CommandSetDesc,
+	InvalidNumber,
+	ChangesAreDone;
 }

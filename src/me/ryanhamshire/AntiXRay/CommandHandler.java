@@ -18,7 +18,6 @@
 
 package me.ryanhamshire.AntiXRay;
 
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -26,10 +25,6 @@ import org.bukkit.entity.Player;
 
 // handles slash commands
 class CommandHandler implements CommandExecutor {
-
-	private static final ChatColor CMD = ChatColor.YELLOW;
-	private static final ChatColor DESC = ChatColor.BLUE;
-	
 	
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
@@ -38,6 +33,7 @@ class CommandHandler implements CommandExecutor {
 			else AntiXRay.sendMessage(sender, Messages.NoPermission);
 			return true;
 		} else {
+			// reloads the configuration and messages:
 			if (args[0].equalsIgnoreCase("reload")) {
 				if (sender.hasPermission("antixray.reload")) {
 					// reload configuration 
@@ -49,28 +45,105 @@ class CommandHandler implements CommandExecutor {
 				} else AntiXRay.sendMessage(sender, Messages.NoPermission);
 				
 				return true;
+				
+			// prints information about a player (for example his current points):
 			} else if (args[0].equalsIgnoreCase("check") || args[0].equalsIgnoreCase("points")) {
-				if (!(sender instanceof Player)) {
-					AntiXRay.sendMessage(sender, Messages.OnlyAsPlayer);
-				} else {
-					Player player = (Player) sender;
-					if (args.length == 1) {
-						if (sender.hasPermission("antixray.check.self")) {
-							int points = AntiXRay.instance.dataStore.getPlayerData(player).points;
-							AntiXRay.sendMessage(player, Messages.CurrentPoints, player.getName(), String.valueOf(points));
-							
-						} else AntiXRay.sendMessage(sender, Messages.NoPermission);
+				// checking for himself:
+				if (args.length == 1) {
+					// only possible for players..
+					if (!(sender instanceof Player)) {
+						AntiXRay.sendMessage(sender, Messages.OnlyAsPlayer);
 					} else {
-						if (sender.hasPermission("antixray.check.others")) {
-							String targetName = args[1];
-							PlayerData playerData = AntiXRay.instance.dataStore.getPlayerDataIfExist(targetName);
-							if (playerData == null) {
-								AntiXRay.sendMessage(player, Messages.NoPlayerDataFound, targetName);
+						Player player = (Player) sender;
+						
+						if (player.hasPermission("antixray.check.self")) {
+							String targetName = player.getName();
+							PlayerData playerData = AntiXRay.instance.dataStore.getPlayerData(player);
+							
+							// send player information
+							sendPlayerCheckInformation(player, targetName, playerData);
+						} else {
+							AntiXRay.sendMessage(player, Messages.NoPermission);
+						}
+					}
+				} else {
+					// checking for someone else:
+					if (sender.hasPermission("antixray.check.others")) {
+						String targetName = args[1];
+						PlayerData playerData = AntiXRay.instance.dataStore.getPlayerDataIfExist(targetName);
+						
+						// send player information
+						sendPlayerCheckInformation(sender, targetName, playerData);
+					} else {
+						AntiXRay.sendMessage(sender, Messages.NoPermission);
+					}
+				}	
+				
+				return true;
+				
+			// sets a players value (for example his points) to a specified value:
+			} else if (args[0].equalsIgnoreCase("set")) {
+				if (sender.hasPermission("antixray.set")) {
+					if (args.length == 4) {
+						String targetName = args[1];
+						PlayerData playerData = AntiXRay.instance.dataStore.getPlayerDataIfExist(targetName);
+						
+						if (playerData != null) {
+							if (args[2].equalsIgnoreCase("points")) {
+								// set the points:
+								Integer newPoints = getNumber(args[3]);
+								if (newPoints != null) {
+									int oldPoints = playerData.points;
+									
+									// only change, if necessary:
+									if (oldPoints != newPoints) {
+										playerData.points = newPoints;
+										
+										// save changes
+										AntiXRay.instance.dataStore.savePlayerData(targetName, playerData);	
+									}
+									
+									// send done:
+									AntiXRay.sendMessage(sender, Messages.ChangesAreDone);
+									
+								} else {
+									AntiXRay.sendMessage(sender, Messages.InvalidNumber, args[3]);
+								}
+								
+							} else if (args[2].equalsIgnoreCase("counter")) {
+								// set the reached-limit-counter:
+								Integer newCounter = getNumber(args[3]);
+								if (newCounter != null && newCounter >= 0) {
+									int oldCounter = playerData.reachedLimitCount;
+									
+									// only change, if necessary:
+									if (oldCounter != newCounter) {
+										playerData.reachedLimitCount = newCounter;
+										
+										// save changes
+										AntiXRay.instance.dataStore.savePlayerData(targetName, playerData);	
+									}
+									
+									// send done:
+									AntiXRay.sendMessage(sender, Messages.ChangesAreDone);
+									
+								} else {
+									AntiXRay.sendMessage(sender, Messages.InvalidNumber, args[3]);
+								}
+								
 							} else {
-								AntiXRay.sendMessage(player, Messages.CurrentPoints, targetName, String.valueOf(playerData.points));
+								sender.sendMessage(AntiXRay.getMessage(Messages.CommandSetCmd));
 							}
-						} else AntiXRay.sendMessage(sender, Messages.NoPermission);
-					}	
+							
+						} else {
+							AntiXRay.sendMessage(sender, Messages.NoPlayerDataFound, targetName);
+						}
+						
+					} else {
+						sender.sendMessage(AntiXRay.getMessage(Messages.CommandSetCmd));
+					}
+				} else {
+					AntiXRay.sendMessage(sender, Messages.NoPermission);
 				}
 				
 				return true;
@@ -79,12 +152,34 @@ class CommandHandler implements CommandExecutor {
 		return false;
 	}
 	
+	// sends information about a players data to a CommandSender
+	private void sendPlayerCheckInformation(CommandSender sender, String targetName, PlayerData playerData) {
+		if (playerData == null) {
+			AntiXRay.sendMessage(sender, Messages.NoPlayerDataFound, targetName);
+		} else {
+			AntiXRay.sendMessage(sender, Messages.CurrentPoints, targetName, String.valueOf(playerData.points));
+			AntiXRay.sendMessage(sender, Messages.ReachedLimitCount, targetName, String.valueOf(playerData.reachedLimitCount));
+		}
+	}
+	
+	// sends the help page to a CommandSender
 	private void sendHelp(CommandSender sender) {
-		sender.sendMessage(ChatColor.DARK_GREEN + "--- " + ChatColor.DARK_RED + "AntiXRay" + ChatColor.DARK_GREEN + " ---");
-		sender.sendMessage(CMD + "/antixray reload");
-		sender.sendMessage(DESC + "     - " + AntiXRay.getMessage(Messages.CommandReload));
-		sender.sendMessage(CMD + "/antixray check [player]");
-		sender.sendMessage(DESC + "     - " + AntiXRay.getMessage(Messages.CommandPoints));
+		sender.sendMessage(AntiXRay.getMessage(Messages.CommandHelpHeader));
+		sender.sendMessage(AntiXRay.getMessage(Messages.CommandReloadCmd));
+		sender.sendMessage(AntiXRay.getMessage(Messages.CommandReloadDesc));
+		sender.sendMessage(AntiXRay.getMessage(Messages.CommandCheckCmd));
+		sender.sendMessage(AntiXRay.getMessage(Messages.CommandCheckDesc));
+		sender.sendMessage(AntiXRay.getMessage(Messages.CommandSetCmd));
+		sender.sendMessage(AntiXRay.getMessage(Messages.CommandSetDesc));
+	}
+	
+	// Tries to parse an Integer from a String. Returns null, if the string is not a number.
+	private Integer getNumber(String string) {
+		try {
+			return Integer.parseInt(string);
+		} catch(Exception e) {
+			return null;
+		}
 	}
 
 }
