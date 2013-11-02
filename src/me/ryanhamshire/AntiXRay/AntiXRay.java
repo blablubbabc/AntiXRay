@@ -155,7 +155,7 @@ public class AntiXRay extends JavaPlugin {
 					continue;
 				}
 				if (!customBlockSection.isInt("ID")) {
-					logger.warning("CustomBlock 'ID' is no number: " + customBlockName + ".");
+					logger.warning("CustomBlock 'ID' is not a number: " + customBlockName + ".");
 					continue;
 				}
 				if (!customBlockSection.contains("Sub ID")) {
@@ -163,14 +163,14 @@ public class AntiXRay extends JavaPlugin {
 					continue;
 				}
 				if (!customBlockSection.isInt("Sub ID")) {
-					logger.warning("CustomBlock 'Sub ID' is no number: " + customBlockName + ".");
+					logger.warning("CustomBlock 'Sub ID' is not a number: " + customBlockName + ".");
 					continue;
 				}
 				int id = customBlockSection.getInt("ID");
 				int subidInt = customBlockSection.getInt("Sub ID", 0);
 				// range check
 				if (subidInt < -1 || subidInt > Byte.MAX_VALUE) {
-					logger.warning("CustomBlock 'Sub ID' is no valid sub id: " + customBlockName + ".");
+					logger.warning("CustomBlock 'Sub ID' is not a valid sub id: " + customBlockName + ".");
 					continue;
 				}
 				byte subid = (byte) subidInt;
