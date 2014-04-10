@@ -324,6 +324,8 @@ public class AntiXRay extends JavaPlugin {
 				// add default ores with worldHeight:
 				for (Entry<String, BlockData> defaultOre : defaultProtections.entrySet()) {
 					BlockData defaultData = defaultOre.getValue();
+					// using worldHeight for the block data here, so that the world specific height value can overwrite the height of the default ores
+					// so users don't have to overwrite the height for each specific default ore in each world
 					worldOres.put(defaultOre.getKey(), new BlockData(defaultData.getId(), defaultData.getSubid(), defaultData.getValue(), worldHeight));
 				}
 
@@ -343,6 +345,13 @@ public class AntiXRay extends JavaPlugin {
 							// get max height:
 							int defaultMaxOreHeight = defaultData != null ? defaultData.getHeight() : worldHeight;
 							int height = oreSection.getInt("MaxHeight", defaultMaxOreHeight);
+							
+							// heights get overwritten in this hierarchy:
+							// defaultMaxHeight < default protected ore specific MaxHeight < world specific MaxHeight < world specific ore specific MaxHeight
+							// however, the world specific ore specific MaxHeight value prefers the default ore MaxHeight value as default
+							// so if we add DIAMOND_ORE to the world specific ores, without specifying a max height for it there,
+							// it will use the max height value of the same ore from the default protected ores section,
+							// which uses the general DefaultMaxHeight value as default..
 
 							// check for custom block:
 							if (customBlocks.containsKey(oreName)) {
