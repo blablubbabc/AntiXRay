@@ -41,6 +41,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.mcstats.Metrics;
 
 public class AntiXRay extends JavaPlugin {
 	// for convenience, a reference to the instance of this plugin
@@ -55,6 +56,7 @@ public class AntiXRay extends JavaPlugin {
 	// custom configuration path separator, as some users use dots in their world names:
 	public static final char DOT = '\uF8FF';
 	// configuration variables, loaded/saved from a config.yml
+	public boolean config_metrics;
 	public int config_pointsPerHour; // how quickly players earn "points" which allow them to mine valuables
 	public int config_maxPoints; // the upper limit on points
 	public int config_startingPoints; // initial points for players who are new to the server
@@ -94,6 +96,16 @@ public class AntiXRay extends JavaPlugin {
 		// command handler
 		getCommand("antixray").setExecutor(new CommandHandler());
 
+		// let's see how many people use this plugin:
+		if (config_metrics) {
+			try {
+			    Metrics metrics = new Metrics(this);
+			    metrics.start();
+			} catch (IOException e) {
+			    // Failed to submit the stats :-(
+			}
+		}
+		
 		logger.info("AntiXRay enabled.");
 	}
 
@@ -127,6 +139,7 @@ public class AntiXRay extends JavaPlugin {
 		// read configuration settings and set default values if necessary:
 		ConfigurationSection baseSection = config.getConfigurationSection("AntiXRay");
 		if (baseSection == null) baseSection = config.createSection("AntiXRay");
+		this.config_metrics = baseSection.getBoolean("EnableMetricsTracking", true);
 		this.config_startingPoints = baseSection.getInt("NewPlayerStartingPoints", -400);
 		this.config_pointsPerHour = baseSection.getInt("PointsEarnedPerHourPlayed", 800);
 		this.config_maxPoints = baseSection.getInt("MaximumPoints", 1600);
