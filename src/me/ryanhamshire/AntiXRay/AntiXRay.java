@@ -19,6 +19,7 @@
 package me.ryanhamshire.AntiXRay;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -30,8 +31,11 @@ import java.util.logging.Logger;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.World.Environment;
+import org.bukkit.WorldType;
 import org.bukkit.command.*;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -48,6 +52,8 @@ public class AntiXRay extends JavaPlugin {
 	// this handles data storage, like player data
 	public DataStore dataStore;
 
+	// custom configuration path separator, as some users use dots in their world names:
+	public static final char DOT = '\uF8FF';
 	// configuration variables, loaded/saved from a config.yml
 	public int config_pointsPerHour; // how quickly players earn "points" which allow them to mine valuables
 	public int config_maxPoints; // the upper limit on points
@@ -105,42 +111,49 @@ public class AntiXRay extends JavaPlugin {
 	}
 
 	void loadConfig() {
-		// load the config if it exists
-		FileConfiguration config = YamlConfiguration.loadConfiguration(new File(DataStore.configFilePath));
+		// init fresh config with custom path separator, as some users might have world names with dots in it:
+		FileConfiguration config = new YamlConfiguration();
+		config.options().pathSeparator(DOT);
+		try {
+			config.load(new File(DataStore.configFilePath));
+		} catch (FileNotFoundException e) {
+			// do nothing here: config is initialized empty, so default values will be used
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InvalidConfigurationException e) {
+			e.printStackTrace();
+		}
 
 		// read configuration settings and set default values if necessary:
-		this.config_startingPoints = config.getInt("AntiXRay.NewPlayerStartingPoints", -400);
-		this.config_pointsPerHour = config.getInt("AntiXRay.PointsEarnedPerHourPlayed", 800);
-		this.config_maxPoints = config.getInt("AntiXRay.MaximumPoints", 1600);
+		ConfigurationSection baseSection = config.getConfigurationSection("AntiXRay");
+		if (baseSection == null) baseSection = config.createSection("AntiXRay");
+		this.config_startingPoints = baseSection.getInt("NewPlayerStartingPoints", -400);
+		this.config_pointsPerHour = baseSection.getInt("PointsEarnedPerHourPlayed", 800);
+		this.config_maxPoints = baseSection.getInt("MaximumPoints", 1600);
 
-		this.config_ignoreMaxPointsForBlockRatio = config.getBoolean("AntiXRay.IgnoreMaxPointsForBlockRatio", true);
+		this.config_ignoreMaxPointsForBlockRatio = baseSection.getBoolean("IgnoreMaxPointsForBlockRatio", true);
+		this.config_exemptCreativeModePlayers = baseSection.getBoolean("ExemptCreativeModePlayers", true);
+		this.config_notifyOnLimitReached = baseSection.getBoolean("NotifyOnMiningLimitReached", false);
 
-		this.config_exemptCreativeModePlayers = config.getBoolean("AntiXRay.ExemptCreativeModePlayers", true);
+		// default max height: only checks for blocks broken below this height
+		int defaultHeight = baseSection.getInt("DefaultMaxHeight", 63);
 
-		this.config_notifyOnLimitReached = config.getBoolean("AntiXRay.NotifyOnMiningLimitReached", false);
+		// write all those loaded values from above back to file (for defaults):
+		baseSection.set("NewPlayerStartingPoints", this.config_startingPoints);
+		baseSection.set("PointsEarnedPerHourPlayed", this.config_pointsPerHour);
+		baseSection.set("MaximumPoints", this.config_maxPoints);
 
-		// write these values back to config(for the defaults):
-		config.set("AntiXRay.NewPlayerStartingPoints", this.config_startingPoints);
-		config.set("AntiXRay.PointsEarnedPerHourPlayed", this.config_pointsPerHour);
-		config.set("AntiXRay.MaximumPoints", this.config_maxPoints);
+		baseSection.set("IgnoreMaxPointsForBlockRatio", this.config_ignoreMaxPointsForBlockRatio);
+		baseSection.set("ExemptCreativeModePlayers", this.config_exemptCreativeModePlayers);
+		baseSection.set("NotifyOnMiningLimitReached", this.config_notifyOnLimitReached);
 
-		config.set("AntiXRay.IgnoreMaxPointsForBlockRatio", this.config_ignoreMaxPointsForBlockRatio);
+		baseSection.set("DefaultMaxHeight", defaultHeight);
 
-		config.set("AntiXRay.ExemptCreativeModePlayers", this.config_exemptCreativeModePlayers);
-
-		config.set("AntiXRay.NotifyOnMiningLimitReached", this.config_notifyOnLimitReached);
-
-		// default ore values:
-
-		// // default max height: only checks for blocks broken below this height
-		int defaultHeight = config.getInt("DefaultMaxHeight", 63);
-		// write value back to config (for defaults):
-		config.set("AntiXRay.DefaultMaxHeight", defaultHeight);
-
-		// // load custom block definitions:
+		// load custom block definitions:
 		Map<String, BlockData> customBlocks = new HashMap<String, BlockData>();
-		ConfigurationSection customBlocksSection = config.getConfigurationSection("AntiXRay.CustomBlockDefinitions");
-		if (customBlocksSection != null) {
+		ConfigurationSection customBlocksSection = baseSection.getConfigurationSection("CustomBlockDefinitions");
+		if (customBlocksSection == null) customBlocksSection = baseSection.createSection("CustomBlockDefinitions");
+		else {
 			Set<String> names = customBlocksSection.getKeys(false);
 			Iterator<String> iterator = names.iterator();
 			while (iterator.hasNext()) {
@@ -179,20 +192,23 @@ public class AntiXRay extends JavaPlugin {
 				customBlocks.put(customBlockName, new BlockData(id, subid, 0, 0));
 			}
 		}
-		// // default for custom blocks definitions (value and height will be ignored)
+
+		// default for custom blocks definitions (value and height will be ignored)
 		if (customBlocks.size() == 0) {
 			customBlocks.put("SomeCustomOre", new BlockData(123, (byte) 0, 0, 0));
 		}
-		// write defaults for the custom ore definitions to config:
+
+		// write values back to config:
 		for (Entry<String, BlockData> entry : customBlocks.entrySet()) {
-			config.set("AntiXRay.CustomBlockDefinitions." + entry.getKey() + ".ID", entry.getValue().getId());
-			config.set("AntiXRay.CustomBlockDefinitions." + entry.getKey() + ".Sub ID", entry.getValue().getSubid());
+			baseSection.set("CustomBlockDefinitions" + DOT + entry.getKey() + DOT + "ID", entry.getValue().getId());
+			baseSection.set("CustomBlockDefinitions" + DOT + entry.getKey() + DOT + "Sub ID", entry.getValue().getSubid());
 		}
 
-		// // load the list of default valuable ores:
+		// load the list of default valuable ores:
 		Map<String, BlockData> defaultProtections = new HashMap<String, BlockData>();
-		ConfigurationSection defaultBlocksSection = config.getConfigurationSection("AntiXRay.ProtectedBlockValues");
-		if (defaultBlocksSection != null) {
+		ConfigurationSection defaultBlocksSection = baseSection.getConfigurationSection("ProtectedBlockValues");
+		if (defaultBlocksSection == null) defaultBlocksSection = baseSection.createSection("ProtectedBlockValues");
+		else {
 			for (String oreName : defaultBlocksSection.getKeys(false)) {
 				// value for this type of block
 				int value = defaultBlocksSection.getInt(oreName, 0);
@@ -218,122 +234,132 @@ public class AntiXRay extends JavaPlugin {
 			}
 		}
 
-		// // default values for the default protected blocks list
+		// no valid values found? -> add default values for the default protected blocks list
 		if (defaultProtections.size() == 0) {
 			defaultProtections.put(Material.DIAMOND_ORE.toString(), new BlockData(Material.DIAMOND_ORE.getId(), (byte) 0, 100, defaultHeight));
 			defaultProtections.put(Material.EMERALD_ORE.toString(), new BlockData(Material.EMERALD_ORE.getId(), (byte) 0, 50, defaultHeight));
 		}
-		// // write default values to config:
+
+		// write values back to config:
 		for (Entry<String, BlockData> entry : defaultProtections.entrySet()) {
-			config.set("AntiXRay.ProtectedBlockValues." + entry.getKey(), entry.getValue().getValue());
+			defaultBlocksSection.set(entry.getKey(), entry.getValue().getValue());
 		}
 
 		// read world (specific) data:
 		Map<String, Map<String, BlockData>> worldBlockData = new HashMap<String, Map<String, BlockData>>();
 
-		ConfigurationSection worldsSection = config.getConfigurationSection("AntiXRay.Worlds");
-		if (worldsSection != null) {
-			for (String worldName : worldsSection.getKeys(false)) {
-				Map<String, BlockData> worldOres = new HashMap<String, BlockData>();
-				Map<String, BlockData> worldSpecificOres = new HashMap<String, BlockData>();
-				worldBlockData.put(worldName, worldOres);
-				// add this world:
-				ProtectedBlocks.addWorld(worldName);
-				// validate world:
-				World world = getServer().getWorld(worldName);
-				if (world == null) {
-					logger.warning("Configuration: There's no world named \"" + worldName + "\".  Make sure that the worldnames in your config.yml are correct!");
-				}
-
-				// world specific informations:
-				ConfigurationSection worldSection = worldsSection.getConfigurationSection(worldName);
-
-				// write world name back to config:
-				String worldNode = "AntiXRay.Worlds." + worldName;
-				// first remove all data (to remove invalid stuff), but still remain the worldname:
-				config.set(worldNode, "");
-
-				if (worldSection != null) {
-					int worldHeight = worldSection.getInt("DefaultMaxHeight", defaultHeight);
-
-					// add default ores with worldHeight:
-					for (Entry<String, BlockData> defaultOre : defaultProtections.entrySet()) {
-						BlockData defaultData = defaultOre.getValue();
-						worldOres.put(defaultOre.getKey(), new BlockData(defaultData.getId(), defaultData.getSubid(), defaultData.getValue(), worldHeight));
-					}
-
-					// world specific ore data: this will later be used to overwrite the default ore data for this world
-					ConfigurationSection oresSection = worldSection.getConfigurationSection("ProtectedBlocks");
-					if (oresSection != null) {
-						for (String oreName : oresSection.getKeys(false)) {
-							ConfigurationSection oreSection = oresSection.getConfigurationSection(oreName);
-							if (oreSection != null) {
-								int value = oreSection.getInt("Value", 0);
-								int height = oreSection.getInt("MaxHeight", worldHeight);
-
-								// check for custom block:
-								if (customBlocks.containsKey(oreName)) {
-									BlockData customData = customBlocks.get(oreName);
-									// initialize BlockData with information from the custom block definition and add it to the world ores:
-									worldSpecificOres.put(oreName, new BlockData(customData.getId(), customData.getSubid(), value, height));
-
-								} else {
-									// check material name:
-									Material material = Material.getMaterial(oreName);
-									if (material == null) {
-										logger.warning("Material not found: " + oreName);
-										continue;
-									} else {
-										// initialize BlockData with id from the found material and subid of 0 and add it to the world ores:
-										worldSpecificOres.put(oreName, new BlockData(material.getId(), (byte) 0, value, height));
-									}
-								}
-
-							}
-						}
-
-						// overwrite default ore data for this world:
-						worldOres.putAll(worldSpecificOres);
-					}
-
-					// then set all world specific data:
-					if (worldHeight != defaultHeight) config.set(worldNode + ".DefaultMaxHeight", worldHeight);
-					String worldOresNode = worldNode + ".ProtectedBlocks";
-					for (Entry<String, BlockData> entry : worldSpecificOres.entrySet()) {
-						BlockData blockData = entry.getValue();
-						config.set(worldOresNode + "." + entry.getKey() + ".Value", blockData.getValue());
-						config.set(worldOresNode + "." + entry.getKey() + ".MaxHeight", blockData.getHeight());
-					}
-
-				} else {
-					// add only the default ores (with default height):
-					worldOres.putAll(defaultProtections);
-				}
-			}
-		} else {
-			// default worlds:
-			for (World world : getServer().getWorlds()) {
-				Map<String, BlockData> worldOres = new HashMap<String, BlockData>();
+		ConfigurationSection worldsSection = baseSection.getConfigurationSection("Worlds");
+		if (worldsSection == null) {
+			// init with default world data:
+			worldsSection = baseSection.createSection("Worlds");
+			// add defaults for all loaded worlds:
+			for (World world : this.getServer().getWorlds()) {
 				String worldName = world.getName();
-				worldBlockData.put(worldName, worldOres);
-				// add the default ores:
-				worldOres.putAll(defaultProtections);
+				logger.info("Adding default world entry for world: " + worldName);
+
+				WorldType worldType = world.getWorldType();
+				Environment environment = world.getEnvironment();
+
+				ConfigurationSection worldSection = worldsSection.createSection(worldName);
 
 				// write default world data to config:
-				String worldNode = "AntiXRay.Worlds." + worldName;
-				if (worldName.equalsIgnoreCase("world")) {
-					String worldOresNode = worldNode + ".ProtectedBlocks";
-					config.set(worldOresNode + "." + Material.DIAMOND_ORE.name() + ".Value", 100);
-					config.set(worldOresNode + "." + Material.DIAMOND_ORE.name() + ".MaxHeight", 20);
-				} else if (worldName.equalsIgnoreCase("world_nether") || worldName.equalsIgnoreCase("world_the_end")) {
-					config.set(worldNode + ".DefaultMaxHeight", 256);
+				if (environment == Environment.NORMAL && worldType == WorldType.NORMAL) {
+					ConfigurationSection protectedBlocksSection = worldSection.createSection("ProtectedBlocks");
+					protectedBlocksSection.set(Material.DIAMOND_ORE.name() + DOT + "Value", 100);
+					protectedBlocksSection.set(Material.DIAMOND_ORE.name() + DOT + "MaxHeight", 20);
+				} else if (environment == Environment.NETHER || environment == Environment.THE_END) {
+					worldSection.set("DefaultMaxHeight", 256);
 				} else {
-					config.set(worldNode, "");
+					worldsSection.set(worldName, "");
 				}
 			}
 		}
 
-		// set the protections for all worlds:
+		// should have been initialized with default data:
+		assert worldsSection != null;
+
+		// read world data now:
+		for (String worldName : worldsSection.getKeys(false)) {
+			Map<String, BlockData> worldOres = new HashMap<String, BlockData>();
+			Map<String, BlockData> worldSpecificOres = new HashMap<String, BlockData>();
+			worldBlockData.put(worldName, worldOres);
+			// add this world:
+			ProtectedBlocks.addWorld(worldName);
+			// validate world:
+			World world = getServer().getWorld(worldName);
+			if (world == null) {
+				logger.warning("Configuration: There's no world named \"" + worldName + "\".  Make sure that the worldnames in your config.yml are correct!");
+			}
+
+			// world specific informations:
+			ConfigurationSection worldSection = worldsSection.getConfigurationSection(worldName);
+
+			if (worldSection != null) {
+				int worldHeight = worldSection.getInt("DefaultMaxHeight", defaultHeight);
+
+				// add default ores with worldHeight:
+				for (Entry<String, BlockData> defaultOre : defaultProtections.entrySet()) {
+					BlockData defaultData = defaultOre.getValue();
+					worldOres.put(defaultOre.getKey(), new BlockData(defaultData.getId(), defaultData.getSubid(), defaultData.getValue(), worldHeight));
+				}
+
+				// world specific ore data: this will later be used to overwrite the default ore data for this world
+				ConfigurationSection oresSection = worldSection.getConfigurationSection("ProtectedBlocks");
+				if (oresSection != null) {
+					for (String oreName : oresSection.getKeys(false)) {
+						ConfigurationSection oreSection = oresSection.getConfigurationSection(oreName);
+						if (oreSection != null) {
+							int value = oreSection.getInt("Value", 0);
+							int height = oreSection.getInt("MaxHeight", worldHeight);
+
+							// check for custom block:
+							if (customBlocks.containsKey(oreName)) {
+								BlockData customData = customBlocks.get(oreName);
+								// initialize BlockData with information from the custom block definition and add it to the world ores:
+								worldSpecificOres.put(oreName, new BlockData(customData.getId(), customData.getSubid(), value, height));
+
+							} else {
+								// check material name:
+								Material material = Material.getMaterial(oreName);
+								if (material == null) {
+									logger.warning("Material not found: " + oreName);
+									continue;
+								} else {
+									// initialize BlockData with id from the found material and subid of 0 and add it to the world ores:
+									worldSpecificOres.put(oreName, new BlockData(material.getId(), (byte) 0, value, height));
+								}
+							}
+
+						}
+					}
+
+					// overwrite default ore data for this world:
+					worldOres.putAll(worldSpecificOres);
+				}
+
+				// write all current world specific data back to config:
+				if (worldHeight != defaultHeight) worldSection.set("DefaultMaxHeight", worldHeight);
+				if (worldSpecificOres.size() > 0) {
+					ConfigurationSection protectedBlocksSection = worldSection.createSection("ProtectedBlocks");
+					for (Entry<String, BlockData> entry : worldSpecificOres.entrySet()) {
+						BlockData blockData = entry.getValue();
+						protectedBlocksSection.set(entry.getKey() + DOT + "Value", blockData.getValue());
+						protectedBlocksSection.set(entry.getKey() + DOT + "MaxHeight", blockData.getHeight());
+					}
+				}
+
+			} else {
+				// add only the default ores (with default height):
+				worldOres.putAll(defaultProtections);
+			}
+		}
+
+		// write all world data back to config:
+
+		// clear old loaded world protections:
+		ProtectedBlocks.clear();
+
+		// set the loaded protections for all worlds:
 		for (Entry<String, Map<String, BlockData>> worldData : worldBlockData.entrySet()) {
 			String worldName = worldData.getKey();
 			for (BlockData blockData : worldData.getValue().values()) {
@@ -341,9 +367,7 @@ public class AntiXRay extends JavaPlugin {
 			}
 		}
 
-		// write all those configuration values from above back to file
-		// (this writes the defaults to the config file when nothing is specified)
-
+		// save config (writes default values):
 		try {
 			config.save(DataStore.configFilePath);
 		} catch (IOException exception) {

@@ -31,6 +31,10 @@ class ProtectedBlocks {
 		worlds.put(worldName, new ArrayList<BlockData>());
 	}
 
+	public static void clear() {
+		worlds.clear();
+	}
+
 	public static void addProtection(String worldName, BlockData blockData) {
 		List<BlockData> worldBlockData = worlds.get(worldName);
 		if (worldBlockData == null) {
