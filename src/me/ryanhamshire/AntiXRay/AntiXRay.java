@@ -319,6 +319,7 @@ public class AntiXRay extends JavaPlugin {
 			worldsSection.set(worldName, "");
 
 			if (worldSection != null) {
+				boolean worldHeightSet = worldSection.isSet("DefaultMaxHeight");
 				int worldHeight = worldSection.getInt("DefaultMaxHeight", defaultHeight);
 
 				// add default ores with worldHeight:
@@ -342,8 +343,10 @@ public class AntiXRay extends JavaPlugin {
 							int defaultOreValue = defaultData != null ? defaultData.getValue() : 0;
 							int value = oreSection.getInt("Value", defaultOreValue);
 
-							// get max height: (let's use the world specific default max height value as default to reduce complexity)
-							int height = oreSection.getInt("MaxHeight", worldHeight);
+							// get max height:
+							// only uses the default ore specific max height value if it is available and no world specific max height value was set
+							int defaultMaxOreHeight = (defaultData != null) && !worldHeightSet ? defaultData.getHeight() : worldHeight;
+							int height = oreSection.getInt("MaxHeight", defaultMaxOreHeight);
 
 							// check for custom block:
 							if (customBlocks.containsKey(oreName)) {
@@ -371,7 +374,9 @@ public class AntiXRay extends JavaPlugin {
 				}
 
 				// write all world specific data back to config:
-				if (worldHeight != defaultHeight) {
+				if (worldHeightSet) {
+					// we also have to store world specific max height data if it equals the general default max height value
+					// because otherwise the world specific ore specific height values wouldn't use it as default value
 					worldsSection.set(worldName + DOT + "DefaultMaxHeight", worldHeight);
 				}
 				if (worldSpecificOres.size() > 0) {
