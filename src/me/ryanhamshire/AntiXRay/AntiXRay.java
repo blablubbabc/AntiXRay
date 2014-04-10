@@ -342,16 +342,8 @@ public class AntiXRay extends JavaPlugin {
 							int defaultOreValue = defaultData != null ? defaultData.getValue() : 0;
 							int value = oreSection.getInt("Value", defaultOreValue);
 
-							// get max height:
-							int defaultMaxOreHeight = defaultData != null ? defaultData.getHeight() : worldHeight;
-							int height = oreSection.getInt("MaxHeight", defaultMaxOreHeight);
-							
-							// heights get overwritten in this hierarchy:
-							// defaultMaxHeight < default protected ore specific MaxHeight < world specific MaxHeight < world specific ore specific MaxHeight
-							// however, the world specific ore specific MaxHeight value prefers the default ore MaxHeight value as default
-							// so if we add DIAMOND_ORE to the world specific ores, without specifying a max height for it there,
-							// it will use the max height value of the same ore from the default protected ores section,
-							// which uses the general DefaultMaxHeight value as default..
+							// get max height: (let's use the world specific default max height value as default to reduce complexity)
+							int height = oreSection.getInt("MaxHeight", worldHeight);
 
 							// check for custom block:
 							if (customBlocks.containsKey(oreName)) {
@@ -391,11 +383,10 @@ public class AntiXRay extends JavaPlugin {
 
 						BlockData defaultData = defaultProtections.get(oreName);
 						int defaultOreValue = defaultData != null ? defaultData.getValue() : 0;
-						int defaultMaxOreHeight = defaultData != null ? defaultData.getHeight() : worldHeight;
 
 						String oreNode = worldName + DOT + "ProtectedBlocks" + oreName;
 						if (value != defaultOreValue) worldsSection.set(oreNode + DOT + "Value", value);
-						if (maxHeight != defaultMaxOreHeight) worldsSection.set(oreNode + DOT + "MaxHeight", value);
+						if (maxHeight != worldHeight) worldsSection.set(oreNode + DOT + "MaxHeight", value);
 					}
 				}
 
