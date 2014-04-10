@@ -210,14 +210,19 @@ public class AntiXRay extends JavaPlugin {
 		if (defaultBlocksSection == null) defaultBlocksSection = baseSection.createSection("ProtectedBlockValues");
 		else {
 			for (String oreName : defaultBlocksSection.getKeys(false)) {
-				// value for this type of block
-				int value = defaultBlocksSection.getInt(oreName, 0);
+				ConfigurationSection blockSection = defaultBlocksSection.getConfigurationSection(oreName);
+				// remove section first (gets rewritten with valid data afterwards):
+				defaultBlocksSection.set(oreName, null);
+				if (blockSection == null) continue; // no valid section
+				// data for this type of block
+				int value = blockSection.getInt("Value", 0);
+				int height = blockSection.getInt("MaxHeight", defaultHeight);
 
 				// check for custom block:
 				if (customBlocks.containsKey(oreName)) {
 					BlockData customData = customBlocks.get(oreName);
 					// initialize BlockData with information from the custom block definition and the default height
-					defaultProtections.put(oreName, new BlockData(customData.getId(), customData.getSubid(), value, defaultHeight));
+					defaultProtections.put(oreName, new BlockData(customData.getId(), customData.getSubid(), value, height));
 
 				} else {
 					// check material name:
@@ -227,7 +232,7 @@ public class AntiXRay extends JavaPlugin {
 						continue;
 					} else {
 						// initialize BlockData with id from the found material and subid of 0 and the default height
-						defaultProtections.put(oreName, new BlockData(material.getId(), (byte) 0, value, defaultHeight));
+						defaultProtections.put(oreName, new BlockData(material.getId(), (byte) 0, value, height));
 					}
 				}
 
@@ -236,13 +241,16 @@ public class AntiXRay extends JavaPlugin {
 
 		// no valid values found? -> add default values for the default protected blocks list
 		if (defaultProtections.size() == 0) {
-			defaultProtections.put(Material.DIAMOND_ORE.toString(), new BlockData(Material.DIAMOND_ORE.getId(), (byte) 0, 100, defaultHeight));
-			defaultProtections.put(Material.EMERALD_ORE.toString(), new BlockData(Material.EMERALD_ORE.getId(), (byte) 0, 50, defaultHeight));
+			defaultProtections.put(Material.DIAMOND_ORE.toString(), new BlockData(Material.DIAMOND_ORE.getId(), (byte) 0, 100, 20));
+			defaultProtections.put(Material.EMERALD_ORE.toString(), new BlockData(Material.EMERALD_ORE.getId(), (byte) 0, 50, 35));
 		}
 
 		// write values back to config:
 		for (Entry<String, BlockData> entry : defaultProtections.entrySet()) {
-			defaultBlocksSection.set(entry.getKey(), entry.getValue().getValue());
+			ConfigurationSection blockSection = defaultBlocksSection.createSection(entry.getKey());
+			BlockData data = entry.getValue();
+			blockSection.set("Value", data.getValue());
+			if (data.getHeight() != defaultHeight) blockSection.set("MaxHeight", data.getHeight());
 		}
 
 		// read world (specific) data:
@@ -294,6 +302,9 @@ public class AntiXRay extends JavaPlugin {
 			// world specific informations:
 			ConfigurationSection worldSection = worldsSection.getConfigurationSection(worldName);
 
+			// remove old world section from config, but keep world name / keep world enabled, it gets rewritten with valid data afterwards:
+			worldsSection.set(worldName, "");
+
 			if (worldSection != null) {
 				int worldHeight = worldSection.getInt("DefaultMaxHeight", defaultHeight);
 
@@ -309,8 +320,16 @@ public class AntiXRay extends JavaPlugin {
 					for (String oreName : oresSection.getKeys(false)) {
 						ConfigurationSection oreSection = oresSection.getConfigurationSection(oreName);
 						if (oreSection != null) {
-							int value = oreSection.getInt("Value", 0);
-							int height = oreSection.getInt("MaxHeight", worldHeight);
+							// if we have a default block data for this specific ore, use that for default values:
+							BlockData defaultData = defaultProtections.get(oreName);
+
+							// get value:
+							int defaultOreValue = defaultData != null ? defaultData.getValue() : 0;
+							int value = oreSection.getInt("Value", defaultOreValue);
+
+							// get max height:
+							int defaultMaxOreHeight = defaultData != null ? defaultData.getHeight() : worldHeight;
+							int height = oreSection.getInt("MaxHeight", defaultMaxOreHeight);
 
 							// check for custom block:
 							if (customBlocks.containsKey(oreName)) {
@@ -337,14 +356,24 @@ public class AntiXRay extends JavaPlugin {
 					worldOres.putAll(worldSpecificOres);
 				}
 
-				// write all current world specific data back to config:
-				if (worldHeight != defaultHeight) worldSection.set("DefaultMaxHeight", worldHeight);
+				// write all world specific data back to config:
+				if (worldHeight != defaultHeight) {
+					worldsSection.set(worldName + DOT + "DefaultMaxHeight", worldHeight);
+				}
 				if (worldSpecificOres.size() > 0) {
-					ConfigurationSection protectedBlocksSection = worldSection.createSection("ProtectedBlocks");
 					for (Entry<String, BlockData> entry : worldSpecificOres.entrySet()) {
+						String oreName = entry.getKey();
 						BlockData blockData = entry.getValue();
-						protectedBlocksSection.set(entry.getKey() + DOT + "Value", blockData.getValue());
-						protectedBlocksSection.set(entry.getKey() + DOT + "MaxHeight", blockData.getHeight());
+						int value = blockData.getValue();
+						int maxHeight = blockData.getHeight();
+
+						BlockData defaultData = defaultProtections.get(oreName);
+						int defaultOreValue = defaultData != null ? defaultData.getValue() : 0;
+						int defaultMaxOreHeight = defaultData != null ? defaultData.getHeight() : worldHeight;
+
+						String oreNode = worldName + DOT + "ProtectedBlocks" + oreName;
+						if (value != defaultOreValue) worldsSection.set(oreNode + DOT + "Value", value);
+						if (maxHeight != defaultMaxOreHeight) worldsSection.set(oreNode + DOT + "MaxHeight", value);
 					}
 				}
 
