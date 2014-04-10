@@ -29,118 +29,118 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 
-//event handlers related to blocks
+// event handlers related to blocks
 public class BlockEventHandler implements Listener {
-	//convenience reference to singleton datastore
+	// convenience reference to singleton datastore
 	private DataStore dataStore;
-	
-	//boring typical constructor
+
+	// boring typical constructor
 	public BlockEventHandler(DataStore dataStore) {
 		this.dataStore = dataStore;
 	}
-	
-	//when a player breaks a block... priority high, so other plugins can first cancel block breaking
+
+	// when a player breaks a block... priority high, so other plugins can first cancel block breaking
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
 	public void onBlockBreak(BlockBreakEvent breakEvent) {
 		Player player = breakEvent.getPlayer();
-		
-		//ignore players with the bypass permission
-		if(player.hasPermission("antixray.bypass")) return;
-		
-		//ignore players in creative mode
-		if(AntiXRay.instance.config_exemptCreativeModePlayers && player.getGameMode() == GameMode.CREATIVE) return;
-		
+
+		// ignore players with the bypass permission
+		if (player.hasPermission("antixray.bypass")) return;
+
+		// ignore players in creative mode
+		if (AntiXRay.instance.config_exemptCreativeModePlayers && player.getGameMode() == GameMode.CREATIVE) return;
+
 		Block block = breakEvent.getBlock();
-		
+
 		// get block protections for this world
 		List<BlockData> protections = ProtectedBlocks.getProtections(block.getWorld().getName());
-		
-		//if there are no protections for this world, ignore the event
-		if(protections == null || protections.isEmpty()) return;
-		
-		//allows a player to break a block he just placed (he must have been charged points already to collect it in the first place) without cost
+
+		// if there are no protections for this world, ignore the event
+		if (protections == null || protections.isEmpty()) return;
+
+		// allows a player to break a block he just placed (he must have been charged points already to collect it in the first place) without cost
 		PlayerData playerData = this.dataStore.getPlayerData(player);
-		if(playerData.lastPlacedBlockLocation != null && block.getLocation().equals(playerData.lastPlacedBlockLocation)) {
+		if (playerData.lastPlacedBlockLocation != null && block.getLocation().equals(playerData.lastPlacedBlockLocation)) {
 			playerData.lastPlacedBlockLocation = null;
 			return;
 		}
-		
+
 		int height = block.getLocation().getBlockY();
-		
-		//look for the block's type in the list of protected blocks
-		for(BlockData blockData : protections) {
-			//if it's in the list, consider whether this player should be permitted to break the block
-			if(blockData.isOfSameType(block) && height <= blockData.getHeight()) {
-				//if he doesn't have enough points
-				if(blockData.getValue() > 0 && playerData.points < blockData.getValue()) {
+
+		// look for the block's type in the list of protected blocks
+		for (BlockData blockData : protections) {
+			// if it's in the list, consider whether this player should be permitted to break the block
+			if (blockData.isOfSameType(block) && height <= blockData.getHeight()) {
+				// if he doesn't have enough points
+				if (blockData.getValue() > 0 && playerData.points < blockData.getValue()) {
 					String reachedLimitCounterString = String.valueOf(playerData.reachedLimitCount);
-					
+
 					if (!playerData.reachedLimitThisSession) {
-						//avoid doing this twice in one play session for this player
+						// avoid doing this twice in one play session for this player
 						playerData.reachedLimitThisSession = true;
-						
+
 						// increment reached-limit-counter
 						playerData.reachedLimitCount += 1;
 						// update reachedLimitCounter string
 						reachedLimitCounterString = String.valueOf(playerData.reachedLimitCount);
-						
-						//if configured to do so, make an entry in the log and notify any online moderators
-						if(AntiXRay.instance.config_notifyOnLimitReached) {
-							//make log entry
-							AntiXRay.logger.info(player.getName() + " reached the mining speed limit at " + AntiXRay.getfriendlyLocationString(player.getLocation()) 
-									+ ". He already reached it for about " + reachedLimitCounterString + " times.");
-							
-							//notify online moderators
-							Player [] players = AntiXRay.instance.getServer().getOnlinePlayers();
-							for(int i = 0; i < players.length; i++) {
+
+						// if configured to do so, make an entry in the log and notify any online moderators
+						if (AntiXRay.instance.config_notifyOnLimitReached) {
+							// make log entry
+							AntiXRay.logger
+									.info(player.getName() + " reached the mining speed limit at " + AntiXRay.getfriendlyLocationString(player.getLocation()) + ". He already reached it for about " + reachedLimitCounterString + " times.");
+
+							// notify online moderators
+							Player[] players = AntiXRay.instance.getServer().getOnlinePlayers();
+							for (int i = 0; i < players.length; i++) {
 								Player moderator = players[i];
-								if(moderator.hasPermission("antixray.monitorxrayers")) {
+								if (moderator.hasPermission("antixray.monitorxrayers")) {
 									AntiXRay.sendMessage(moderator, Messages.AdminNotification, player.getName(), reachedLimitCounterString);
 								}
 							}
-						}	
+						}
 					}
-					
-					//estimate how long it will be before he can break this block
-					int minutesUntilBreak = (int)((blockData.getValue() - playerData.points) / (float)(AntiXRay.instance.config_pointsPerHour) * 60);
-					if(minutesUntilBreak == 0) minutesUntilBreak = 1;
-					
-					//inform him
+
+					// estimate how long it will be before he can break this block
+					int minutesUntilBreak = (int) ((blockData.getValue() - playerData.points) / (float) (AntiXRay.instance.config_pointsPerHour) * 60);
+					if (minutesUntilBreak == 0) minutesUntilBreak = 1;
+
+					// inform him
 					AntiXRay.sendMessage(player, Messages.CantBreakYet, String.valueOf(minutesUntilBreak), reachedLimitCounterString);
-					
-					//cancel the breakage
+
+					// cancel the breakage
 					breakEvent.setCancelled(true);
-					
+
 				} else {
-					//otherwise, subtract the value of the block from his points
+					// otherwise, subtract the value of the block from his points
 					playerData.points -= blockData.getValue();
-					//make sure that the players point are lower than the maxPoints limit:
-					if (!AntiXRay.instance.config_ignoreMaxPointsForBlockRatio && playerData.points > AntiXRay.instance.config_maxPoints) playerData.points =  AntiXRay.instance.config_maxPoints;
+					// make sure that the players point are lower than the maxPoints limit:
+					if (!AntiXRay.instance.config_ignoreMaxPointsForBlockRatio && playerData.points > AntiXRay.instance.config_maxPoints) playerData.points = AntiXRay.instance.config_maxPoints;
 				}
-				
-				//once a match is found, no need to look farther
+
+				// once a match is found, no need to look farther
 				return;
 			}
 		}
 	}
-	
-	//when a player places a block...
+
+	// when a player places a block...
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
 	public void onBlockPlace(BlockPlaceEvent placeEvent) {
 		Player player = placeEvent.getPlayer();
-		
-		//ignore players with the bypass permission
-		if(player.hasPermission("antixray.bypass")) return;
-		
-		//ignore players in creative mode
-		if(AntiXRay.instance.config_exemptCreativeModePlayers && player.getGameMode() == GameMode.CREATIVE) return;
-		
+
+		// ignore players with the bypass permission
+		if (player.hasPermission("antixray.bypass")) return;
+
+		// ignore players in creative mode
+		if (AntiXRay.instance.config_exemptCreativeModePlayers && player.getGameMode() == GameMode.CREATIVE) return;
+
 		Block block = placeEvent.getBlockPlaced();
-		
-		//if the block's world isn't in the list of controlled worlds, ignore the event
-		if(!ProtectedBlocks.isWorldProtected(block.getWorld().getName())) return;
-		
-		//allows a player to break a block he just placed (he must have been charged points already to collect it in the first place) without cost
+
+		// if the block's world isn't in the list of controlled worlds, ignore the event
+		if (!ProtectedBlocks.isWorldProtected(block.getWorld().getName())) return;
+
+		// allows a player to break a block he just placed (he must have been charged points already to collect it in the first place) without cost
 		PlayerData playerData = this.dataStore.getPlayerData(player);
 		playerData.lastPlacedBlockLocation = block.getLocation();
 	}

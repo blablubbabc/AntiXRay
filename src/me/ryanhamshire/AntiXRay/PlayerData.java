@@ -20,19 +20,18 @@ package me.ryanhamshire.AntiXRay;
 
 import org.bukkit.Location;
 
-//holds all of AntiXray's player-tied data
-public class PlayerData 
-{
-	//a player's "ore score", which determines whether or not he can break a specific block type
+// holds all of AntiXray's player-tied data
+public class PlayerData {
+	// a player's "ore score", which determines whether or not he can break a specific block type
 	public int points = AntiXRay.instance.config_startingPoints;
 	public int reachedLimitCount = 0;
-	
-	//where this player was the last time we checked on him for earning points
+
+	// where this player was the last time we checked on him for earning points
 	public Location lastAfkCheckLocation = null;
-	
-	//whether or not this player has reached his mining limit this play session
+
+	// whether or not this player has reached his mining limit this play session
 	public boolean reachedLimitThisSession = false;
-	
-	//the location of the last block placed, to allow for breaking a block just now placed without spending ore score
+
+	// the location of the last block placed, to allow for breaking a block just now placed without spending ore score
 	public Location lastPlacedBlockLocation = null;
 }

@@ -26,14 +26,14 @@ class BlockData {
 	private final byte subid;
 	private final int value;
 	private final int height;
-	
+
 	public BlockData(int id, byte subid, int value, int height) {
 		this.id = id;
 		this.subid = subid;
 		this.value = value;
 		this.height = height;
 	}
-	
+
 	public byte getSubid() {
 		return subid;
 	}
@@ -41,7 +41,7 @@ class BlockData {
 	public int getId() {
 		return id;
 	}
-	
+
 	public int getHeight() {
 		return height;
 	}
@@ -49,12 +49,12 @@ class BlockData {
 	public int getValue() {
 		return value;
 	}
-	
+
 	// check if this BlockDatas type equals a given type of block (a subid of -1 ignores the subid)
 	public boolean isOfSameType(Block block) {
 		return (block != null && id == block.getTypeId() && (subid == -1 || subid == block.getData()));
 	}
-	
+
 	// check if this BlockDatas type equals another BlockDatas type (a subid of -1 ignores the subid)
 	public boolean isOfSameType(BlockData blockData) {
 		return (blockData != null && id == blockData.getId() && (subid == -1 || subid == blockData.getSubid()));

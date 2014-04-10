@@ -24,35 +24,31 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.*;
 
-class PlayerEventHandler implements Listener 
-{
+class PlayerEventHandler implements Listener {
 	private DataStore dataStore;
-	
-	PlayerEventHandler(DataStore dataStore)
-	{
+
+	PlayerEventHandler(DataStore dataStore) {
 		this.dataStore = dataStore;
 	}
 
-	//when a player successfully joins the server...
+	// when a player successfully joins the server...
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
-	void onPlayerJoin(PlayerJoinEvent event)
-	{
-		//get his player data, forcing it to initialize if we've never seen him before
+	void onPlayerJoin(PlayerJoinEvent event) {
+		// get his player data, forcing it to initialize if we've never seen him before
 		@SuppressWarnings("unused")
 		PlayerData playerData = this.dataStore.getPlayerData(event.getPlayer());
 	}
-	
-	//when a player quits...
+
+	// when a player quits...
 	@EventHandler(priority = EventPriority.HIGHEST)
-	void onPlayerQuit(PlayerQuitEvent event)
-	{
+	void onPlayerQuit(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
-		
-		//save player data, just in case he accrued some block points which haven't been saved yet
+
+		// save player data, just in case he accrued some block points which haven't been saved yet
 		this.dataStore.savePlayerData(playerName, this.dataStore.getPlayerData(player));
-		
-		//drop player data from memory
+
+		// drop player data from memory
 		this.dataStore.clearCachedPlayerData(playerName);
 	}
 }

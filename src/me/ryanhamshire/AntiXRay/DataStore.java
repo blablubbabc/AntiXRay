@@ -26,56 +26,51 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-//abstract class for data storage.  implementing classes fill the implementation gaps for flat file storage and database storage, respectively
-abstract class DataStore 
-{
-	//in-memory cache for player data
+// abstract class for data storage.  implementing classes fill the implementation gaps for flat file storage and database storage, respectively
+abstract class DataStore {
+	// in-memory cache for player data
 	private HashMap<String, PlayerData> playerNameToPlayerDataMap = new HashMap<String, PlayerData>();
-	
-	//in-memory cache for messages
-	private String [] messages;
-	
-	//path information, for where stuff stored on disk is well...  stored
+
+	// in-memory cache for messages
+	private String[] messages;
+
+	// path information, for where stuff stored on disk is well... stored
 	final static String dataLayerFolderPath = "plugins" + File.separator + "AntiXRayData";
 	final static String configFilePath = dataLayerFolderPath + File.separator + "config.yml";
 	final static String messagesFilePath = dataLayerFolderPath + File.separator + "messages.yml";
-	
-	//initialization varies depending on flat file or database storage
-	void initialize()
-	{
-		//load up all the messages from messages.yml
+
+	// initialization varies depending on flat file or database storage
+	void initialize() {
+		// load up all the messages from messages.yml
 		this.loadMessages();
 	}
-	
-	//removes cached player data from memory
-	void clearCachedPlayerData(String playerName)
-	{
+
+	// removes cached player data from memory
+	void clearCachedPlayerData(String playerName) {
 		this.playerNameToPlayerDataMap.remove(playerName);
 	}
-	
-	//retrieves player data from memory or file, as necessary
-	//if the player has never been on the server before, this will return a fresh player data with default values
-	public PlayerData getPlayerData(Player player)
-	{
+
+	// retrieves player data from memory or file, as necessary
+	// if the player has never been on the server before, this will return a fresh player data with default values
+	public PlayerData getPlayerData(Player player) {
 		String playerName = player.getName();
-		
-		//first, look in memory
+
+		// first, look in memory
 		PlayerData playerData = this.playerNameToPlayerDataMap.get(playerName);
-		
-		//if not there, look on disk
-		if(playerData == null)
-		{
+
+		// if not there, look on disk
+		if (playerData == null) {
 			playerData = this.loadPlayerDataFromStorage(player);
-			
-			//shove that new player data into the hash map cache
+
+			// shove that new player data into the hash map cache
 			this.playerNameToPlayerDataMap.put(playerName, playerData);
 		}
-		
-		//try the hash map again.  if it's STILL not there, we have a bug to fix
+
+		// try the hash map again. if it's STILL not there, we have a bug to fix
 		return this.playerNameToPlayerDataMap.get(playerName);
 	}
-	
-	//returns PlayerData for a player with the given name and RETURNS NULL if no PlayerData was found for this name. 
+
+	// returns PlayerData for a player with the given name and RETURNS NULL if no PlayerData was found for this name.
 	// The loaded playerData will not be saved in memory and is meant for one-time lookup purposes.
 	public PlayerData getPlayerDataIfExist(String playerName) {
 		// first, look in memory
@@ -85,64 +80,64 @@ abstract class DataStore
 		if (playerData == null) {
 			playerData = this.loadPlayerDataFromStorageIfExist(playerName);
 		}
-		
+
 		return playerData;
 	}
-	
-	//default points = max when the player has played on the server before
-	//otherwise, use starting points from config file
+
+	// default points = max when the player has played on the server before
+	// otherwise, use starting points from config file
 	int getDefaultPoints(Player player) {
 		return getDefaultPoints(player.hasPlayedBefore());
 	}
-	
+
 	int getDefaultPoints(boolean hasPlayedBefore) {
-		if (!hasPlayedBefore)
-		{
+		if (!hasPlayedBefore) {
 			return AntiXRay.instance.config_startingPoints;
-		}
-		else
-		{
+		} else {
 			return AntiXRay.instance.config_maxPoints;
 		}
 	}
-	
-	//returns a default PlayerData object for the given player
-	PlayerData getDefaultPlayerData(Player player)
-	{
+
+	// returns a default PlayerData object for the given player
+	PlayerData getDefaultPlayerData(Player player) {
 		PlayerData playerData = new PlayerData();
-		
-		//default points
+
+		// default points
 		playerData.points = getDefaultPoints(player);
-		
+
 		return playerData;
 	}
-	
-	//implementation varies depending on flat file or database storage
+
+	// implementation varies depending on flat file or database storage
 	abstract PlayerData loadPlayerDataFromStorage(Player player);
-	
-	//loading PlayerData by a given name and returns null, if there is no data stored for a player with this name
-	//implementation varies depending on flat file or database storage
+
+	// loading PlayerData by a given name and returns null, if there is no data stored for a player with this name
+	// implementation varies depending on flat file or database storage
 	abstract PlayerData loadPlayerDataFromStorageIfExist(String playerName);
-	
-	//saves changes to player data.  MUST be called after you're done making changes, otherwise a reload will lose them
-	//implementation varies based on flat file or database storage
+
+	// saves changes to player data. MUST be called after you're done making changes, otherwise a reload will lose them
+	// implementation varies based on flat file or database storage
 	abstract void savePlayerData(String playerName, PlayerData playerData);
-	
-	//whether or not data was stored for a player with this name
-	//implementation varies based on flat file or database storage
+
+	// whether or not data was stored for a player with this name
+	// implementation varies based on flat file or database storage
 	abstract boolean existsPlayerData(String playerName);
-	
-	//loads user-facing messages from the messages.yml configuration file into memory
-	private void loadMessages() 
-	{
+
+	// loads user-facing messages from the messages.yml configuration file into memory
+	private void loadMessages() {
 		Messages[] messageIDs = Messages.values();
 		this.messages = new String[Messages.values().length];
-		
+
 		HashMap<String, CustomizableMessage> defaults = new HashMap<String, CustomizableMessage>();
-		
-		//initialize defaults
-		this.addDefault(defaults, Messages.CantBreakYet, "&eWow, you're good at mining!  You have to wait about {0} minutes to break this block.  If you wait longer, you can mine even more of this.  Consider taking a break from mining to do something else, like building or exploring.  This mining speed limit keeps our ores safe from cheaters.  :)", "0: minutes until the block can be broken  1: how often the player has already reached his limit (unused by default)");
-		this.addDefault(defaults, Messages.AdminNotification, "&e{0} reached the mining speed limit. He already reached it about {1} times.", "0: player name  1: how often the player has already reached his limit");
+
+		// initialize defaults
+		this.addDefault(
+				defaults,
+				Messages.CantBreakYet,
+				"&eWow, you're good at mining!  You have to wait about {0} minutes to break this block.  If you wait longer, you can mine even more of this.  Consider taking a break from mining to do something else, like building or exploring.  This mining speed limit keeps our ores safe from cheaters.  :)",
+				"0: minutes until the block can be broken  1: how often the player has already reached his limit (unused by default)");
+		this.addDefault(defaults, Messages.AdminNotification, "&e{0} reached the mining speed limit. He already reached it about {1} times.",
+				"0: player name  1: how often the player has already reached his limit");
 		this.addDefault(defaults, Messages.NoPermission, "&cYou have no permission for that.", null);
 		this.addDefault(defaults, Messages.OnlyAsPlayer, "&cThis command can only be executed as a player.", null);
 		this.addDefault(defaults, Messages.CommandHelpHeader, "&2--- &4AntiXRay &2---", null);
@@ -158,76 +153,65 @@ abstract class DataStore
 		this.addDefault(defaults, Messages.CommandSetDesc, "&9     - Sets the players points or counter value.", null);
 		this.addDefault(defaults, Messages.InvalidNumber, "&c'{0}' is not a valid number.", "0: the invalid argument");
 		this.addDefault(defaults, Messages.ChangesAreDone, "&aChanges were successfully made.", null);
-		
-		
-		//load the config file
+
+		// load the config file
 		FileConfiguration config = YamlConfiguration.loadConfiguration(new File(messagesFilePath));
-		
-		//for each message ID
-		for (int i = 0; i < messageIDs.length; i++)
-		{
-			//get default for this message
+
+		// for each message ID
+		for (int i = 0; i < messageIDs.length; i++) {
+			// get default for this message
 			Messages messageID = messageIDs[i];
 			CustomizableMessage messageData = defaults.get(messageID.name());
-			
-			//if default is missing, log an error and use some fake data for now so that the plugin can run
-			if (messageData == null)
-			{
+
+			// if default is missing, log an error and use some fake data for now so that the plugin can run
+			if (messageData == null) {
 				AntiXRay.logger.severe("Missing message for " + messageID.name() + ".  Please contact the developer.");
 				messageData = new CustomizableMessage(messageID, "Missing message!  ID: " + messageID.name() + ".  Please contact a server admin.", null);
 			}
-			
-			//read the message from the file, use default if necessary
+
+			// read the message from the file, use default if necessary
 			String message = config.getString("Messages." + messageID.name() + ".Text", messageData.text);
 			config.set("Messages." + messageID.name() + ".Text", message);
-			
-			//colorize and store message
+
+			// colorize and store message
 			this.messages[messageID.ordinal()] = ChatColor.translateAlternateColorCodes('&', message);
-			
-			if (messageData.notes != null)
-			{
+
+			if (messageData.notes != null) {
 				messageData.notes = config.getString("Messages." + messageID.name() + ".Notes", messageData.notes);
 				config.set("Messages." + messageID.name() + ".Notes", messageData.notes);
 			}
 		}
-		
-		//save any changes
-		try
-		{
+
+		// save any changes
+		try {
 			config.save(DataStore.messagesFilePath);
-		}
-		catch(IOException exception)
-		{
+		} catch (IOException exception) {
 			AntiXRay.logger.severe("Unable to write to the configuration file at \"" + DataStore.messagesFilePath + "\"");
 		}
-		
+
 		defaults.clear();
-		System.gc();				
+		System.gc();
 	}
 
-	//helper for above, adds a default message and notes to go with a message ID
-	private void addDefault(HashMap<String, CustomizableMessage> defaults,
-			Messages id, String text, String notes)
-	{
+	// helper for above, adds a default message and notes to go with a message ID
+	private void addDefault(HashMap<String, CustomizableMessage> defaults, Messages id, String text, String notes) {
 		CustomizableMessage message = new CustomizableMessage(id, text, notes);
-		defaults.put(id.name(), message);		
+		defaults.put(id.name(), message);
 	}
 
-	//gets a message from memory
-	public String getMessage(Messages messageID, String... args)
-	{
+	// gets a message from memory
+	public String getMessage(Messages messageID, String... args) {
 		String message = messages[messageID.ordinal()];
-		
-		for (int i = 0; i < args.length; i++)
-		{
+
+		for (int i = 0; i < args.length; i++) {
 			String param = args[i];
 			message = message.replace("{" + i + "}", param);
 		}
-		
+
 		return message;
-		
+
 	}
-	
-	//closes any open connections.  implementation varies depending on flat file or database storage.
+
+	// closes any open connections. implementation varies depending on flat file or database storage.
 	abstract void close();
 }
