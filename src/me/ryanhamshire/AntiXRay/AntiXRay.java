@@ -390,7 +390,7 @@ public class AntiXRay extends JavaPlugin {
 						int defaultOreValue = defaultData != null ? defaultData.getValue() : 0;
 						int defaultMaxOreHeight = (defaultData != null) && !worldHeightSet ? defaultData.getHeight() : worldHeight;
 
-						String oreNode = worldName + DOT + "ProtectedBlocks" + oreName;
+						String oreNode = worldName + DOT + "ProtectedBlocks" + DOT + oreName;
 						if (value != defaultOreValue) worldsSection.set(oreNode + DOT + "Value", value);
 						if (maxHeight != defaultMaxOreHeight) worldsSection.set(oreNode + DOT + "MaxHeight", value);
 					}
