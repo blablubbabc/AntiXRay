@@ -148,7 +148,7 @@ abstract class DataStore {
 		this.addDefault(defaults, Messages.CommandCheckCmd, "&e/antixray check [player]", null);
 		this.addDefault(defaults, Messages.CommandCheckDesc, "&9     - Shows you your or another players current points.", null);
 		this.addDefault(defaults, Messages.CurrentPoints, "&e{0} currently has {1} points.", "0: player name  1: the players points");
-		this.addDefault(defaults, Messages.ReachedLimitCount, "&e{0} has reached his limit {1} times.", "0: player name  1: how often the player has already reached his limit");
+		this.addDefault(defaults, Messages.ReachedLimitCount, "&e{0} has reached the limit {1} times.", "0: player name  1: how often the player has already reached the limit");
 		this.addDefault(defaults, Messages.NoPlayerDataFound, "&eNo PlayerData was found for '{0}'.", "0: player name");
 		this.addDefault(defaults, Messages.CommandSetCmd, "&e/antixray set <player> <points|counter> <value>", null);
 		this.addDefault(defaults, Messages.CommandSetDesc, "&9     - Sets the players points or counter value.", null);
