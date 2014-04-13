@@ -37,7 +37,7 @@ class DeliverPointsTask implements Runnable {
 		for (int i = 0; i < players.length; i++) {
 			Player player = players[i];
 			DataStore dataStore = AntiXRay.instance.dataStore;
-			PlayerData playerData = dataStore.getPlayerData(player);
+			PlayerData playerData = dataStore.getOrCreatePlayerData(player);
 
 			Location lastLocation = playerData.lastAfkCheckLocation;
 			// distance squared will throw an exception if the player has changed worlds

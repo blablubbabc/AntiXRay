@@ -18,6 +18,8 @@
 
 package me.ryanhamshire.AntiXRay;
 
+import java.util.UUID;
+
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -36,19 +38,19 @@ class PlayerEventHandler implements Listener {
 	void onPlayerJoin(PlayerJoinEvent event) {
 		// get his player data, forcing it to initialize if we've never seen him before
 		@SuppressWarnings("unused")
-		PlayerData playerData = this.dataStore.getPlayerData(event.getPlayer());
+		PlayerData playerData = this.dataStore.getOrCreatePlayerData(event.getPlayer());
 	}
 
 	// when a player quits...
 	@EventHandler(priority = EventPriority.HIGHEST)
 	void onPlayerQuit(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
-		String playerName = player.getName();
+		UUID uuid = player.getUniqueId();
 
 		// save player data, just in case he accrued some block points which haven't been saved yet
-		this.dataStore.savePlayerData(playerName, this.dataStore.getPlayerData(player));
+		this.dataStore.savePlayerData(uuid, this.dataStore.getOrCreatePlayerData(player));
 
 		// drop player data from memory
-		this.dataStore.clearCachedPlayerData(playerName);
+		this.dataStore.clearCachedPlayerData(uuid);
 	}
 }

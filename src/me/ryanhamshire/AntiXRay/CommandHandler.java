@@ -18,6 +18,8 @@
 
 package me.ryanhamshire.AntiXRay;
 
+import java.util.UUID;
+
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -27,7 +29,7 @@ import org.bukkit.entity.Player;
 class CommandHandler implements CommandExecutor {
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+	public boolean onCommand(final CommandSender sender, final Command cmd, final String label, final String[] args) {
 		if (args.length == 0 || args[0].equalsIgnoreCase("help") || args[0].equalsIgnoreCase("?")) {
 			if (sender.hasPermission("antixray.help")) sendHelp(sender);
 			else AntiXRay.sendMessage(sender, Messages.NoPermission);
@@ -58,7 +60,7 @@ class CommandHandler implements CommandExecutor {
 
 						if (player.hasPermission("antixray.check.self")) {
 							String targetName = player.getName();
-							PlayerData playerData = AntiXRay.instance.dataStore.getPlayerData(player);
+							PlayerData playerData = AntiXRay.instance.dataStore.getOrCreatePlayerData(player);
 
 							// send player information
 							sendPlayerCheckInformation(player, targetName, playerData);
@@ -69,11 +71,19 @@ class CommandHandler implements CommandExecutor {
 				} else {
 					// checking for someone else:
 					if (sender.hasPermission("antixray.check.others")) {
-						String targetName = args[1];
-						PlayerData playerData = AntiXRay.instance.dataStore.getPlayerDataIfExist(targetName);
+						final String targetName = args[1];
 
-						// send player information
-						sendPlayerCheckInformation(sender, targetName, playerData);
+						// continue after looking up the uuid for that playername:
+						AntiXRay.lookupPlayerUUIDForName(targetName, new Callback<UUID>() {
+
+							@Override
+							protected void onComplete(UUID uuid) {
+								PlayerData playerData = uuid == null ? null : AntiXRay.instance.dataStore.getPlayerDataIfExist(uuid);
+
+								// send player information
+								sendPlayerCheckInformation(sender, targetName, playerData);
+							}
+						});
 					} else {
 						AntiXRay.sendMessage(sender, Messages.NoPermission);
 					}
@@ -85,60 +95,68 @@ class CommandHandler implements CommandExecutor {
 			} else if (args[0].equalsIgnoreCase("set")) {
 				if (sender.hasPermission("antixray.set")) {
 					if (args.length == 4) {
-						String targetName = args[1];
-						PlayerData playerData = AntiXRay.instance.dataStore.getPlayerDataIfExist(targetName);
+						final String targetName = args[1];
 
-						if (playerData != null) {
-							if (args[2].equalsIgnoreCase("points")) {
-								// set the points:
-								Integer newPoints = getNumber(args[3]);
-								if (newPoints != null) {
-									int oldPoints = playerData.points;
+						// continue after looking up the uuid for that playername:
+						AntiXRay.lookupPlayerUUIDForName(targetName, new Callback<UUID>() {
 
-									// only change, if necessary:
-									if (oldPoints != newPoints) {
-										playerData.points = newPoints;
+							@Override
+							protected void onComplete(UUID uuid) {
+								PlayerData playerData = uuid == null ? null : AntiXRay.instance.dataStore.getPlayerDataIfExist(uuid);
 
-										// save changes
-										AntiXRay.instance.dataStore.savePlayerData(targetName, playerData);
+								if (playerData != null) {
+									assert uuid != null;
+									if (args[2].equalsIgnoreCase("points")) {
+										// set the points:
+										Integer newPoints = getNumber(args[3]);
+										if (newPoints != null) {
+											int oldPoints = playerData.points;
+
+											// only change, if necessary:
+											if (oldPoints != newPoints) {
+												playerData.points = newPoints;
+
+												// save changes
+												AntiXRay.instance.dataStore.savePlayerData(uuid, playerData);
+											}
+
+											// send done:
+											AntiXRay.sendMessage(sender, Messages.ChangesAreDone);
+
+										} else {
+											AntiXRay.sendMessage(sender, Messages.InvalidNumber, args[3]);
+										}
+
+									} else if (args[2].equalsIgnoreCase("counter")) {
+										// set the reached-limit-counter:
+										Integer newCounter = getNumber(args[3]);
+										if (newCounter != null && newCounter >= 0) {
+											int oldCounter = playerData.reachedLimitCount;
+
+											// only change, if necessary:
+											if (oldCounter != newCounter) {
+												playerData.reachedLimitCount = newCounter;
+
+												// save changes
+												AntiXRay.instance.dataStore.savePlayerData(uuid, playerData);
+											}
+
+											// send done:
+											AntiXRay.sendMessage(sender, Messages.ChangesAreDone);
+
+										} else {
+											AntiXRay.sendMessage(sender, Messages.InvalidNumber, args[3]);
+										}
+
+									} else {
+										sender.sendMessage(AntiXRay.getMessage(Messages.CommandSetCmd));
 									}
 
-									// send done:
-									AntiXRay.sendMessage(sender, Messages.ChangesAreDone);
-
 								} else {
-									AntiXRay.sendMessage(sender, Messages.InvalidNumber, args[3]);
+									AntiXRay.sendMessage(sender, Messages.NoPlayerDataFound, targetName);
 								}
-
-							} else if (args[2].equalsIgnoreCase("counter")) {
-								// set the reached-limit-counter:
-								Integer newCounter = getNumber(args[3]);
-								if (newCounter != null && newCounter >= 0) {
-									int oldCounter = playerData.reachedLimitCount;
-
-									// only change, if necessary:
-									if (oldCounter != newCounter) {
-										playerData.reachedLimitCount = newCounter;
-
-										// save changes
-										AntiXRay.instance.dataStore.savePlayerData(targetName, playerData);
-									}
-
-									// send done:
-									AntiXRay.sendMessage(sender, Messages.ChangesAreDone);
-
-								} else {
-									AntiXRay.sendMessage(sender, Messages.InvalidNumber, args[3]);
-								}
-
-							} else {
-								sender.sendMessage(AntiXRay.getMessage(Messages.CommandSetCmd));
 							}
-
-						} else {
-							AntiXRay.sendMessage(sender, Messages.NoPlayerDataFound, targetName);
-						}
-
+						});
 					} else {
 						sender.sendMessage(AntiXRay.getMessage(Messages.CommandSetCmd));
 					}
@@ -181,5 +199,4 @@ class CommandHandler implements CommandExecutor {
 			return null;
 		}
 	}
-
 }

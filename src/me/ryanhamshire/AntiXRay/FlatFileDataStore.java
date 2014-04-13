@@ -19,11 +19,14 @@
 package me.ryanhamshire.AntiXRay;
 
 import java.io.*;
-import org.bukkit.entity.Player;
+import java.util.UUID;
+
+import org.bukkit.OfflinePlayer;
 
 // singleton class which manages all AntiXRay data (except for config options)
 class FlatFileDataStore extends DataStore {
 	final static String playerDataFolderPath = dataLayerFolderPath + File.separator + "PlayerData";
+	final static String convertedPlayerDataFolderPath = dataLayerFolderPath + File.separator + "PlayerDataConverted";
 
 	FlatFileDataStore() {
 		this.initialize();
@@ -35,73 +38,106 @@ class FlatFileDataStore extends DataStore {
 
 		// ensure data folders exist
 		new File(playerDataFolderPath).mkdirs();
+		new File(convertedPlayerDataFolderPath).mkdirs(); // to backup old player files (from pre MC 1.8)
 	}
 
 	@Override
-	PlayerData loadPlayerDataFromStorage(Player player) {
-		String playerName = player.getName();
-
-		PlayerData playerData = loadPlayerDataFromStorageIfExist(playerName);
+	PlayerData loadOrCreatePlayerDataFromStorage(OfflinePlayer player) {
+		UUID uuid = player.getUniqueId();
+		PlayerData playerData = loadPlayerDataFromStorageIfExist(uuid);
 
 		// if it doesn't exist, set default points
 		if (playerData == null) {
 			playerData = getDefaultPlayerData(player);
+
+			// check if we have some old player data for this player (from pre MC 1.8):
+			String playerName = player.getName();
+			this.importOldPlayerData(playerName, playerData);
 		}
 
 		return playerData;
 	}
 
-	// returns null, if there is no PlayerData saved for this playerName
+	// returns null, if there is no PlayerData saved for this uuid
 	@Override
-	PlayerData loadPlayerDataFromStorageIfExist(String playerName) {
-		File playerFile = new File(playerDataFolderPath + File.separator + playerName);
+	PlayerData loadPlayerDataFromStorageIfExist(UUID uuid) {
+		String uuidS = uuid.toString();
+		File playerFile = new File(playerDataFolderPath + File.separator + uuidS);
+		return this.loadPlayerDataFromFile(playerFile);
+	}
 
-		PlayerData playerData = new PlayerData();
+	@Override
+	boolean isOldPlayerDataExisting(String playerName) {
+		File oldPlayerFile = new File(playerDataFolderPath + File.separator + playerName);
+		return oldPlayerFile.isFile(); // this also checks if the file exists
+	}
+	
+	private PlayerData importOldPlayerData(String playerName, PlayerData newPlayerData) {
+		File oldPlayerFile = new File(playerDataFolderPath + File.separator + playerName);
+		PlayerData oldPlayerData = this.loadPlayerDataFromFile(oldPlayerFile);
+		if (oldPlayerData != null) {
+			// use that data for our new player data:
+			newPlayerData.points = oldPlayerData.points;
+			newPlayerData.reachedLimitCount = oldPlayerData.reachedLimitCount;
 
+			// move the old player file into separate folder so we know it has been converted:
+			File convertedFile = new File(convertedPlayerDataFolderPath + File.separator + playerName);
+			if (!oldPlayerFile.renameTo(convertedFile)) {
+				// moving failed for some reason.. let's print a warning and then remove the file:
+				AntiXRay.logger
+						.warning("Failed to move old player data file (" + playerName + "|" + oldPlayerData.points + "|" + oldPlayerData.reachedLimitCount + ") to \"" + convertedFile.getPath() + "\"!");
+				if (!convertedFile.delete()) {
+					// well.. shit.
+					AntiXRay.logger.warning("Removing that old player data file failed as well..");
+				}
+			}
+		}
+		return oldPlayerData;
+	}
+
+	private PlayerData loadPlayerDataFromFile(File playerFile) {
 		// if it doesn't exist as a file
 		if (!playerFile.exists()) {
 			return null;
 		}
 
 		// otherwise, read the file
-		else {
-			BufferedReader inStream = null;
-			try {
-				inStream = new BufferedReader(new FileReader(playerFile.getAbsolutePath()));
+		PlayerData playerData = new PlayerData();
+		BufferedReader inStream = null;
+		try {
+			inStream = new BufferedReader(new FileReader(playerFile.getAbsolutePath()));
 
-				// first line is points
-				String pointsString = inStream.readLine();
-				// second line is, how often the player has already reached his limit: can be null, if the files are not containing this information yet
-				String reachedLimitCountString = inStream.readLine();
+			// first line is points
+			String pointsString = inStream.readLine();
+			// second line is, how often the player has already reached his limit: can be null, if the files are not containing this information yet
+			String reachedLimitCountString = inStream.readLine();
 
-				// convert that to numbers and store it
-				playerData.points = Integer.parseInt(pointsString);
-				// if the file is in the old format and doesn't contain the information, the playerData will automatically initialized with 0
-				if (reachedLimitCountString != null) playerData.reachedLimitCount = Integer.parseInt(reachedLimitCountString);
+			// convert that to numbers and store it
+			playerData.points = Integer.parseInt(pointsString);
+			// if the file is in the old format and doesn't contain the information, the playerData will automatically initialized with 0
+			if (reachedLimitCountString != null) playerData.reachedLimitCount = Integer.parseInt(reachedLimitCountString);
 
-				inStream.close();
-			}
-
+			inStream.close();
+		} catch (Exception e) {
 			// if there's any problem with the file's content, log an error message
-			catch (Exception e) {
-				AntiXRay.logger.severe("Unable to load data for player \"" + playerName + "\": " + e.getMessage());
-			}
+			AntiXRay.logger.severe("Unable to load player data from \"" + playerFile.getPath() + "\": " + e.getMessage());
+		}
 
-			try {
-				if (inStream != null) inStream.close();
-			} catch (IOException exception) {
-			}
+		try {
+			if (inStream != null) inStream.close();
+		} catch (IOException exception) {
 		}
 
 		return playerData;
 	}
 
 	@Override
-	void savePlayerData(String playerName, PlayerData playerData) {
+	void savePlayerData(UUID uuid, PlayerData playerData) {
+		String uuidS = uuid.toString();
 		BufferedWriter outStream = null;
 		try {
 			// open the player's file
-			File playerDataFile = new File(playerDataFolderPath + File.separator + playerName);
+			File playerDataFile = new File(playerDataFolderPath + File.separator + uuidS);
 			playerDataFile.createNewFile();
 			outStream = new BufferedWriter(new FileWriter(playerDataFile));
 
@@ -116,7 +152,7 @@ class FlatFileDataStore extends DataStore {
 
 		// if any problem, log it
 		catch (Exception e) {
-			AntiXRay.logger.severe("Unexpected exception saving data for player \"" + playerName + "\": " + e.getMessage());
+			AntiXRay.logger.severe("Unexpected exception saving data for player \"" + uuidS + "\": " + e.getMessage());
 		}
 
 		try {
@@ -129,8 +165,8 @@ class FlatFileDataStore extends DataStore {
 	}
 
 	@Override
-	boolean existsPlayerData(String playerName) {
-		File playerFile = new File(playerDataFolderPath + File.separator + playerName);
+	boolean existsPlayerData(UUID uuid) {
+		File playerFile = new File(playerDataFolderPath + File.separator + uuid.toString());
 		// whether or not the file exists
 		return playerFile.exists();
 	}

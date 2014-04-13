@@ -26,10 +26,13 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Logger;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.WorldType;
@@ -99,13 +102,13 @@ public class AntiXRay extends JavaPlugin {
 		// let's see how many people use this plugin:
 		if (config_metrics) {
 			try {
-			    Metrics metrics = new Metrics(this);
-			    metrics.start();
+				Metrics metrics = new Metrics(this);
+				metrics.start();
 			} catch (IOException e) {
-			    // Failed to submit the stats :-(
+				// Failed to submit the stats :-(
 			}
 		}
-		
+
 		logger.info("AntiXRay enabled.");
 	}
 
@@ -115,8 +118,8 @@ public class AntiXRay extends JavaPlugin {
 		Player[] players = this.getServer().getOnlinePlayers();
 		for (int i = 0; i < players.length; i++) {
 			Player player = players[i];
-			String playerName = player.getName();
-			this.dataStore.savePlayerData(playerName, this.dataStore.getPlayerData(player));
+			UUID uuid = player.getUniqueId();
+			this.dataStore.savePlayerData(uuid, this.dataStore.getOrCreatePlayerData(player));
 		}
 
 		this.dataStore.close();
@@ -447,5 +450,53 @@ public class AntiXRay extends JavaPlugin {
 	// creates an easy-to-read location description
 	public static String getfriendlyLocationString(Location location) {
 		return location.getWorld().getName() + "(" + location.getBlockX() + "," + location.getBlockY() + "," + location.getBlockZ() + ")";
+	}
+
+	// this will run async and call the provided callback when done
+	static void lookupPlayerUUIDForName(final String playerName, final Callback<UUID> runWhenDone) {
+		assert playerName != null;
+		assert runWhenDone != null;
+		assert instance != null;
+
+		Bukkit.getScheduler().runTaskAsynchronously(instance, new Runnable() {
+
+			@Override
+			public void run() {
+				final OfflinePlayer offline = Bukkit.getServer().getOfflinePlayer(playerName);
+				UUID uuid;
+				try {
+					// get uuid (converting to Player if possible might fix certain issues on older bukkit versions for at least online players)
+					uuid = offline instanceof Player ? ((Player) offline).getUniqueId() : offline.getUniqueId();
+				} catch (Throwable e) {
+					// well.. seems like we a not running on an uuid-aware bukkit version
+					uuid = null;
+				}
+				runWhenDone.setResult(uuid);
+
+				Bukkit.getScheduler().runTask(AntiXRay.instance, new Runnable() {
+
+					@Override
+					public void run() {
+						if (runWhenDone.result != null) {
+							// we have a playername and the corresponding uuid -> so let's take that chance and look for old player data to convert:
+							// there shouldn't be old player data for online players:
+							if (Bukkit.getPlayerExact(playerName) == null) {
+								if (AntiXRay.instance.dataStore.isOldPlayerDataExisting(playerName)) {
+									// getting or creating the players data (similar to when the player joins) will automatically import old player data if available:
+									PlayerData playerData = AntiXRay.instance.dataStore.getOrCreatePlayerData(offline);
+									// save player data:
+									AntiXRay.instance.dataStore.savePlayerData(runWhenDone.result, playerData);
+									// let's remove the now loaded or created player data from cache again, just like when the player would leave again
+									// (for this it was important that we checked that the player isn't online already before)
+									AntiXRay.instance.dataStore.clearCachedPlayerData(runWhenDone.result);
+								}
+							}
+						}
+						
+						runWhenDone.run();
+					}
+				});
+			}
+		});
 	}
 }

@@ -22,14 +22,14 @@ import java.io.*;
 import java.util.*;
 
 import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 
 // abstract class for data storage.  implementing classes fill the implementation gaps for flat file storage and database storage, respectively
 abstract class DataStore {
 	// in-memory cache for player data
-	private HashMap<String, PlayerData> playerNameToPlayerDataMap = new HashMap<String, PlayerData>();
+	private HashMap<String, PlayerData> playerUUIDToPlayerDataMap = new HashMap<String, PlayerData>();
 
 	// in-memory cache for messages
 	private String[] messages;
@@ -46,39 +46,39 @@ abstract class DataStore {
 	}
 
 	// removes cached player data from memory
-	void clearCachedPlayerData(String playerName) {
-		this.playerNameToPlayerDataMap.remove(playerName);
+	void clearCachedPlayerData(UUID uuid) {
+		this.playerUUIDToPlayerDataMap.remove(uuid.toString());
 	}
 
 	// retrieves player data from memory or file, as necessary
 	// if the player has never been on the server before, this will return a fresh player data with default values
-	public PlayerData getPlayerData(Player player) {
-		String playerName = player.getName();
+	public PlayerData getOrCreatePlayerData(OfflinePlayer player) {
+		String uuidS = player.getUniqueId().toString();
 
 		// first, look in memory
-		PlayerData playerData = this.playerNameToPlayerDataMap.get(playerName);
+		PlayerData playerData = this.playerUUIDToPlayerDataMap.get(uuidS);
 
 		// if not there, look on disk
 		if (playerData == null) {
-			playerData = this.loadPlayerDataFromStorage(player);
+			playerData = this.loadOrCreatePlayerDataFromStorage(player);
 
 			// shove that new player data into the hash map cache
-			this.playerNameToPlayerDataMap.put(playerName, playerData);
+			this.playerUUIDToPlayerDataMap.put(uuidS, playerData);
 		}
 
 		// try the hash map again. if it's STILL not there, we have a bug to fix
-		return this.playerNameToPlayerDataMap.get(playerName);
+		return this.playerUUIDToPlayerDataMap.get(uuidS);
 	}
 
-	// returns PlayerData for a player with the given name and RETURNS NULL if no PlayerData was found for this name.
+	// returns PlayerData for a player with the given uuid and RETURNS NULL if no PlayerData was found for this uuid.
 	// The loaded playerData will not be saved in memory and is meant for one-time lookup purposes.
-	public PlayerData getPlayerDataIfExist(String playerName) {
+	public PlayerData getPlayerDataIfExist(UUID uuid) {
 		// first, look in memory
-		PlayerData playerData = this.playerNameToPlayerDataMap.get(playerName);
+		PlayerData playerData = this.playerUUIDToPlayerDataMap.get(uuid.toString());
 
 		// if not there, look on disk
 		if (playerData == null) {
-			playerData = this.loadPlayerDataFromStorageIfExist(playerName);
+			playerData = this.loadPlayerDataFromStorageIfExist(uuid);
 		}
 
 		return playerData;
@@ -86,7 +86,7 @@ abstract class DataStore {
 
 	// default points = max when the player has played on the server before
 	// otherwise, use starting points from config file
-	int getDefaultPoints(Player player) {
+	int getDefaultPoints(OfflinePlayer player) {
 		return getDefaultPoints(player.hasPlayedBefore());
 	}
 
@@ -99,7 +99,7 @@ abstract class DataStore {
 	}
 
 	// returns a default PlayerData object for the given player
-	PlayerData getDefaultPlayerData(Player player) {
+	PlayerData getDefaultPlayerData(OfflinePlayer player) {
 		PlayerData playerData = new PlayerData();
 
 		// default points
@@ -108,20 +108,23 @@ abstract class DataStore {
 		return playerData;
 	}
 
+	// checks if there is old player data existing (from pre MC 1.8) for this player name
+	abstract boolean isOldPlayerDataExisting(String playerName);
+	
 	// implementation varies depending on flat file or database storage
-	abstract PlayerData loadPlayerDataFromStorage(Player player);
+	abstract PlayerData loadOrCreatePlayerDataFromStorage(OfflinePlayer player);
 
-	// loading PlayerData by a given name and returns null, if there is no data stored for a player with this name
+	// loading PlayerData by a given uuid and returns null, if there is no data stored for a player with this uuid
 	// implementation varies depending on flat file or database storage
-	abstract PlayerData loadPlayerDataFromStorageIfExist(String playerName);
+	abstract PlayerData loadPlayerDataFromStorageIfExist(UUID uuid);
 
 	// saves changes to player data. MUST be called after you're done making changes, otherwise a reload will lose them
 	// implementation varies based on flat file or database storage
-	abstract void savePlayerData(String playerName, PlayerData playerData);
+	abstract void savePlayerData(UUID uuid, PlayerData playerData);
 
-	// whether or not data was stored for a player with this name
+	// whether or not data was stored for a player with this uuid
 	// implementation varies based on flat file or database storage
-	abstract boolean existsPlayerData(String playerName);
+	abstract boolean existsPlayerData(UUID uuid);
 
 	// loads user-facing messages from the messages.yml configuration file into memory
 	private void loadMessages() {
@@ -131,9 +134,7 @@ abstract class DataStore {
 		HashMap<String, CustomizableMessage> defaults = new HashMap<String, CustomizableMessage>();
 
 		// initialize defaults
-		this.addDefault(
-				defaults,
-				Messages.CantBreakYet,
+		this.addDefault(defaults, Messages.CantBreakYet,
 				"&eWow, you're good at mining!  You have to wait about {0} minutes to break this block.  If you wait longer, you can mine even more of this.  Consider taking a break from mining to do something else, like building or exploring.  This mining speed limit keeps our ores safe from cheaters.  :)",
 				"0: minutes until the block can be broken  1: how often the player has already reached his limit (unused by default)");
 		this.addDefault(defaults, Messages.AdminNotification, "&e{0} reached the mining speed limit. He already reached it about {1} times.",

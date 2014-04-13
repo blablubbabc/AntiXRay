@@ -59,7 +59,7 @@ public class BlockEventHandler implements Listener {
 		if (protections == null || protections.isEmpty()) return;
 
 		// allows a player to break a block he just placed (he must have been charged points already to collect it in the first place) without cost
-		PlayerData playerData = this.dataStore.getPlayerData(player);
+		PlayerData playerData = this.dataStore.getOrCreatePlayerData(player);
 		if (playerData.lastPlacedBlockLocation != null && block.getLocation().equals(playerData.lastPlacedBlockLocation)) {
 			playerData.lastPlacedBlockLocation = null;
 			return;
@@ -141,7 +141,7 @@ public class BlockEventHandler implements Listener {
 		if (!ProtectedBlocks.isWorldProtected(block.getWorld().getName())) return;
 
 		// allows a player to break a block he just placed (he must have been charged points already to collect it in the first place) without cost
-		PlayerData playerData = this.dataStore.getPlayerData(player);
+		PlayerData playerData = this.dataStore.getOrCreatePlayerData(player);
 		playerData.lastPlacedBlockLocation = block.getLocation();
 	}
 }
