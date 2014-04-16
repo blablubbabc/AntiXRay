@@ -458,6 +458,13 @@ public class AntiXRay extends JavaPlugin {
 		assert runWhenDone != null;
 		assert instance != null;
 
+		// fast check for online players:
+		Player player = Bukkit.getPlayerExact(playerName);
+		if (player != null) {
+			runWhenDone.setResult(player.getUniqueId()).run();
+			return;
+		}
+		
 		Bukkit.getScheduler().runTaskAsynchronously(instance, new Runnable() {
 
 			@Override
@@ -471,36 +478,10 @@ public class AntiXRay extends JavaPlugin {
 					// well.. seems like the bukkit version we are running on does not support getting the uuid of offline players
 					uuid = null;
 				}
-				runWhenDone.setResult(uuid);
 
-				Bukkit.getScheduler().runTask(AntiXRay.instance, new Runnable() {
-
-					@Override
-					public void run() {
-						// disabled this for now because of potential issue regarding wrong uuids
-						// (offline mode uuids on online mode server, for example if the mojang services are not temporary reach-able,
-						// or the other way round if the server should do an uuid lookup even though it runs in offline mode)
-						/*
-						 * if (runWhenDone.result != null) {
-						 * // we have a playername and the corresponding uuid -> so let's take that chance and look for old player data to convert:
-						 * // there shouldn't be old player data for online players:
-						 * if (Bukkit.getPlayerExact(playerName) == null) {
-						 * if (AntiXRay.instance.dataStore.isOldPlayerDataExisting(playerName)) {
-						 * // getting or creating the players data (similar to when the player joins) will automatically import old player data if available:
-						 * PlayerData playerData = AntiXRay.instance.dataStore.getOrCreatePlayerData(offline);
-						 * // save player data:
-						 * AntiXRay.instance.dataStore.savePlayerData(runWhenDone.result, playerData);
-						 * // let's remove the now loaded or created player data from cache again, just like when the player would leave again
-						 * // (for this it was important that we checked that the player isn't online already before)
-						 * AntiXRay.instance.dataStore.clearCachedPlayerData(runWhenDone.result);
-						 * }
-						 * }
-						 * }
-						 */
-
-						runWhenDone.run();
-					}
-				});
+				// Note: for now let's not use the uuid we got to import old playerdata here, because of potential issue regarding this being the wrong uuid in certain circumstances
+				
+				Bukkit.getScheduler().runTask(AntiXRay.instance, runWhenDone.setResult(uuid));
 			}
 		});
 	}
