@@ -479,7 +479,7 @@ public class AntiXRay extends JavaPlugin {
 					uuid = null;
 				}
 
-				// Note: for now let's not use the uuid we got to import old playerdata here, because of potential issue regarding this being the wrong uuid in certain circumstances
+				// Note: for now let's not use the uuid we got to import old playerdata here, because of potential issues regarding this being the wrong uuid in certain circumstances
 				
 				Bukkit.getScheduler().runTask(AntiXRay.instance, runWhenDone.setResult(uuid));
 			}
