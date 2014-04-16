@@ -22,9 +22,9 @@ import java.io.*;
 import java.util.*;
 
 import org.bukkit.ChatColor;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 
 // abstract class for data storage.  implementing classes fill the implementation gaps for flat file storage and database storage, respectively
 abstract class DataStore {
@@ -52,7 +52,7 @@ abstract class DataStore {
 
 	// retrieves player data from memory or file, as necessary
 	// if the player has never been on the server before, this will return a fresh player data with default values
-	public PlayerData getOrCreatePlayerData(OfflinePlayer player) {
+	public PlayerData getOrCreatePlayerData(Player player) {
 		String uuidS = player.getUniqueId().toString();
 
 		// first, look in memory
@@ -86,7 +86,7 @@ abstract class DataStore {
 
 	// default points = max when the player has played on the server before
 	// otherwise, use starting points from config file
-	int getDefaultPoints(OfflinePlayer player) {
+	int getDefaultPoints(Player player) {
 		return getDefaultPoints(player.hasPlayedBefore());
 	}
 
@@ -99,7 +99,7 @@ abstract class DataStore {
 	}
 
 	// returns a default PlayerData object for the given player
-	PlayerData getDefaultPlayerData(OfflinePlayer player) {
+	PlayerData getDefaultPlayerData(Player player) {
 		PlayerData playerData = new PlayerData();
 
 		// default points
@@ -108,11 +108,12 @@ abstract class DataStore {
 		return playerData;
 	}
 
-	// checks if there is old player data existing (from pre MC 1.8) for this player name
-	abstract boolean isOldPlayerDataExisting(String playerName);
-	
+	// whether or not data was stored for a player with this uuid
+	// implementation varies based on flat file or database storage
+	abstract boolean isPlayerDataExisting(UUID uuid);
+
 	// implementation varies depending on flat file or database storage
-	abstract PlayerData loadOrCreatePlayerDataFromStorage(OfflinePlayer player);
+	abstract PlayerData loadOrCreatePlayerDataFromStorage(Player player);
 
 	// loading PlayerData by a given uuid and returns null, if there is no data stored for a player with this uuid
 	// implementation varies depending on flat file or database storage
@@ -122,9 +123,16 @@ abstract class DataStore {
 	// implementation varies based on flat file or database storage
 	abstract void savePlayerData(UUID uuid, PlayerData playerData);
 
-	// whether or not data was stored for a player with this uuid
-	// implementation varies based on flat file or database storage
-	abstract boolean existsPlayerData(UUID uuid);
+	// methods to handle old playerdata (from pre MC 1.8):
+
+	// checks if there is old player data existing for this player name
+	abstract boolean isOldPlayerDataExisting(String playerName);
+
+	// gets the old playerdata, if it exists/hasn't yet been converted (good to still lookup playerdata of non-converted players and for better compatibility with slightly older versions (1.7.x))
+	abstract PlayerData getOldPlayerDataIfExists(String playerName);
+
+	// saves the given playerdata into an 'old' player file
+	abstract void saveOldPlayerData(String playerName, PlayerData playerData);
 
 	// loads user-facing messages from the messages.yml configuration file into memory
 	private void loadMessages() {

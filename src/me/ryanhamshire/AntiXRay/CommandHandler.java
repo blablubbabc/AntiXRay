@@ -78,7 +78,7 @@ class CommandHandler implements CommandExecutor {
 
 							@Override
 							protected void onComplete(UUID uuid) {
-								PlayerData playerData = uuid == null ? null : AntiXRay.instance.dataStore.getPlayerDataIfExist(uuid);
+								PlayerData playerData = uuid == null ? AntiXRay.instance.dataStore.getOldPlayerDataIfExists(targetName) : AntiXRay.instance.dataStore.getPlayerDataIfExist(uuid);
 
 								// send player information
 								sendPlayerCheckInformation(sender, targetName, playerData);
@@ -102,10 +102,18 @@ class CommandHandler implements CommandExecutor {
 
 							@Override
 							protected void onComplete(UUID uuid) {
-								PlayerData playerData = uuid == null ? null : AntiXRay.instance.dataStore.getPlayerDataIfExist(uuid);
+								PlayerData playerData = null;
+								boolean isOldPlayerData = false;
+								if (uuid != null) {
+									playerData = AntiXRay.instance.dataStore.getPlayerDataIfExist(uuid);
+								} else {
+									playerData = AntiXRay.instance.dataStore.getOldPlayerDataIfExists(targetName);
+									isOldPlayerData = true;
+								}
 
 								if (playerData != null) {
-									assert uuid != null;
+									boolean playerDataDirty = false;
+
 									if (args[2].equalsIgnoreCase("points")) {
 										// set the points:
 										Integer newPoints = getNumber(args[3]);
@@ -115,14 +123,11 @@ class CommandHandler implements CommandExecutor {
 											// only change, if necessary:
 											if (oldPoints != newPoints) {
 												playerData.points = newPoints;
-
-												// save changes
-												AntiXRay.instance.dataStore.savePlayerData(uuid, playerData);
+												playerDataDirty = true;
 											}
 
-											// send done:
+											// inform player that we are done:
 											AntiXRay.sendMessage(sender, Messages.ChangesAreDone);
-
 										} else {
 											AntiXRay.sendMessage(sender, Messages.InvalidNumber, args[3]);
 										}
@@ -136,14 +141,11 @@ class CommandHandler implements CommandExecutor {
 											// only change, if necessary:
 											if (oldCounter != newCounter) {
 												playerData.reachedLimitCount = newCounter;
-
-												// save changes
-												AntiXRay.instance.dataStore.savePlayerData(uuid, playerData);
+												playerDataDirty = true;
 											}
 
-											// send done:
+											// inform player that we are done:
 											AntiXRay.sendMessage(sender, Messages.ChangesAreDone);
-
 										} else {
 											AntiXRay.sendMessage(sender, Messages.InvalidNumber, args[3]);
 										}
@@ -152,6 +154,14 @@ class CommandHandler implements CommandExecutor {
 										sender.sendMessage(AntiXRay.getMessage(Messages.CommandSetCmd));
 									}
 
+									// save changes
+									if (playerDataDirty) {
+										if (isOldPlayerData) {
+											AntiXRay.instance.dataStore.saveOldPlayerData(targetName, playerData);
+										} else {
+											AntiXRay.instance.dataStore.savePlayerData(uuid, playerData);
+										}
+									}
 								} else {
 									AntiXRay.sendMessage(sender, Messages.NoPlayerDataFound, targetName);
 								}

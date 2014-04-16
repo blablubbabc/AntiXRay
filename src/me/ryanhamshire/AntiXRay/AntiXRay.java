@@ -465,10 +465,10 @@ public class AntiXRay extends JavaPlugin {
 				final OfflinePlayer offline = Bukkit.getServer().getOfflinePlayer(playerName);
 				UUID uuid;
 				try {
-					// get uuid (converting to Player if possible might fix certain issues on older bukkit versions for at least online players)
+					// get uuid (casting to Player if the player is online might fix certain issues on older bukkit versions for at least online players)
 					uuid = offline instanceof Player ? ((Player) offline).getUniqueId() : offline.getUniqueId();
 				} catch (Throwable e) {
-					// well.. seems like we a not running on an uuid-aware bukkit version
+					// well.. seems like the bukkit version we are running on does not support getting the uuid of offline players
 					uuid = null;
 				}
 				runWhenDone.setResult(uuid);
