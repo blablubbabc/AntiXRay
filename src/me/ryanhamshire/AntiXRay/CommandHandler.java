@@ -78,7 +78,15 @@ class CommandHandler implements CommandExecutor {
 
 							@Override
 							protected void onComplete(UUID uuid) {
-								PlayerData playerData = uuid == null ? AntiXRay.instance.dataStore.getOldPlayerDataIfExists(targetName) : AntiXRay.instance.dataStore.getPlayerDataIfExist(uuid);
+								PlayerData playerData = null;
+								if (uuid != null) {
+									playerData = AntiXRay.instance.dataStore.getPlayerDataIfExist(uuid);
+								}
+								
+								// there might be old playerdata for this name, which hasn't be converted yet:
+								if (playerData == null) {
+									playerData = AntiXRay.instance.dataStore.getOldPlayerDataIfExists(targetName);
+								}
 
 								// send player information
 								sendPlayerCheckInformation(sender, targetName, playerData);
@@ -106,7 +114,10 @@ class CommandHandler implements CommandExecutor {
 								boolean isOldPlayerData = false;
 								if (uuid != null) {
 									playerData = AntiXRay.instance.dataStore.getPlayerDataIfExist(uuid);
-								} else {
+								}
+								
+								// this also tries to load the playerdata from an old playerdata file, if we don't have a converted playerdata file for this player uuid yet:
+								if (playerData == null) {
 									// Note: if the player joined in the meantime and triggered an import of his old playerdata, we simple won't find the player's data in this specific request.
 									// But nothing serious should break, like: no old playerdata file will be saved/recreated in this situation.
 									playerData = AntiXRay.instance.dataStore.getOldPlayerDataIfExists(targetName);
