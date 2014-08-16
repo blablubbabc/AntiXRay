@@ -32,6 +32,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 
 // event handlers related to blocks
 public class BlockEventHandler implements Listener {
+
 	// convenience reference to singleton datastore
 	private DataStore dataStore;
 
@@ -89,7 +90,7 @@ public class BlockEventHandler implements Listener {
 						if (AntiXRay.instance.config_notifyOnLimitReached) {
 							// make log entry
 							AntiXRay.logger
-									.info(player.getName() + " reached the mining speed limit at " + AntiXRay.getfriendlyLocationString(player.getLocation()) + ". He already reached it for about " + reachedLimitCounterString + " times.");
+											.info(player.getName() + " reached the mining speed limit at " + AntiXRay.getfriendlyLocationString(player.getLocation()) + ". He already reached it for about " + reachedLimitCounterString + " times.");
 
 							// notify online moderators
 							for (Player moderator : Bukkit.getOnlinePlayers()) {

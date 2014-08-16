@@ -22,6 +22,7 @@ import org.bukkit.Location;
 
 // holds all of AntiXray's player-tied data
 public class PlayerData {
+
 	// a player's "ore score", which determines whether or not he can break a specific block type
 	public int points = AntiXRay.instance.config_startingPoints;
 	public int reachedLimitCount = 0;

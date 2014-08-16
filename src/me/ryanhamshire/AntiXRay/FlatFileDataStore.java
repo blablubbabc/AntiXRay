@@ -25,6 +25,7 @@ import org.bukkit.entity.Player;
 
 // singleton class which manages all AntiXRay data (except for config options)
 class FlatFileDataStore extends DataStore {
+
 	final static String playerDataFolderPath = dataLayerFolderPath + File.separator + "PlayerData";
 	final static String convertedPlayerDataFolderPath = dataLayerFolderPath + File.separator + "PlayerDataConverted";
 

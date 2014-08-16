@@ -30,6 +30,7 @@ import org.bukkit.event.entity.EntityExplodeEvent;
 
 // handles events related to entities
 class EntityEventHandler implements Listener {
+
 	// when there's an explosion...
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
 	public void onEntityExplode(EntityExplodeEvent explodeEvent) {

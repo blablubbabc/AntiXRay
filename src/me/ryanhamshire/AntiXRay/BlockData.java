@@ -22,6 +22,7 @@ import org.bukkit.block.Block;
 
 // Stores data about protected blocks. Supports custom blocks.
 class BlockData {
+
 	private final int id;
 	private final byte subid;
 	private final int value;

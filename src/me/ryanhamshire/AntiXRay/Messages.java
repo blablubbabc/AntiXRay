@@ -19,6 +19,7 @@
 package me.ryanhamshire.AntiXRay;
 
 public enum Messages {
+
 	CantBreakYet,
 	AdminNotification,
 	NoPermission,

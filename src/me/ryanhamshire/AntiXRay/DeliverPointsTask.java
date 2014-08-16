@@ -26,6 +26,7 @@ import org.bukkit.entity.Player;
 
 // runs every 5 minutes in the main thread, grants points per hour / 12 to each online player who appears to be actively playing
 class DeliverPointsTask implements Runnable {
+
 	@Override
 	public void run() {
 		// ensure players get at least 1 point

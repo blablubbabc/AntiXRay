@@ -25,6 +25,8 @@ import java.util.Map;
 
 // Stores information about all block protections per world.
 class ProtectedBlocks {
+
+	// stores protections by world <worldName -> protection>
 	private static Map<String, List<BlockData>> worlds = new HashMap<String, List<BlockData>>();
 
 	public static void addWorld(String worldName) {

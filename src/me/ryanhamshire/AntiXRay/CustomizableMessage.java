@@ -19,6 +19,7 @@
 package me.ryanhamshire.AntiXRay;
 
 public class CustomizableMessage {
+
 	public Messages id;
 	public String text;
 	public String notes;

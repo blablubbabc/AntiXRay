@@ -28,8 +28,9 @@ import org.bukkit.entity.Player;
 
 // abstract class for data storage.  implementing classes fill the implementation gaps for flat file storage and database storage, respectively
 abstract class DataStore {
+
 	// in-memory cache for player data
-	private HashMap<String, PlayerData> playerUUIDToPlayerDataMap = new HashMap<String, PlayerData>();
+	private Map<String, PlayerData> playerUUIDToPlayerDataMap = new HashMap<String, PlayerData>();
 
 	// in-memory cache for messages
 	private String[] messages;

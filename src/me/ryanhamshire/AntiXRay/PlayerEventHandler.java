@@ -27,6 +27,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.*;
 
 class PlayerEventHandler implements Listener {
+
 	private DataStore dataStore;
 
 	PlayerEventHandler(DataStore dataStore) {
