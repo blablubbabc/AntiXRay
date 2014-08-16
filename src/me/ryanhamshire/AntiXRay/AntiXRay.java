@@ -96,7 +96,7 @@ public class AntiXRay extends JavaPlugin {
 		pluginManager.registerEvents(entityEventHandler, this);
 
 		// command handler
-		getCommand("antixray").setExecutor(new CommandHandler());
+		this.getCommand("antixray").setExecutor(new CommandHandler());
 
 		// let's see how many people use this plugin:
 		if (config_metrics) {
@@ -282,8 +282,6 @@ public class AntiXRay extends JavaPlugin {
 				worldOres.putAll(defaultProtections);
 			}
 		}
-
-		// write all world data back to config:
 
 		// clear old loaded world protections:
 		ProtectedBlocks.clear();
