@@ -274,7 +274,7 @@ public class AntiXRay extends JavaPlugin {
 
 						String oreNode = worldName + DOT + "ProtectedBlocks" + DOT + key;
 						if (value != defaultOreValue) worldsSection.set(oreNode + DOT + "Value", value);
-						if (maxHeight != defaultMaxOreHeight) worldsSection.set(oreNode + DOT + "MaxHeight", value);
+						if (maxHeight != defaultMaxOreHeight) worldsSection.set(oreNode + DOT + "MaxHeight", maxHeight);
 					}
 				}
 			} else {
