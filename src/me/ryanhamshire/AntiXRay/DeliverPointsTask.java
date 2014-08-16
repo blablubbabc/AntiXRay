@@ -18,6 +18,7 @@
 
 package me.ryanhamshire.AntiXRay;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
@@ -27,15 +28,12 @@ import org.bukkit.entity.Player;
 class DeliverPointsTask implements Runnable {
 	@Override
 	public void run() {
-		Player[] players = AntiXRay.instance.getServer().getOnlinePlayers();
-
 		// ensure players get at least 1 point
 		int pointsEarned = AntiXRay.instance.config_pointsPerHour / 12;
 		if (pointsEarned == 0) pointsEarned = 1;
 
 		// for each online player
-		for (int i = 0; i < players.length; i++) {
-			Player player = players[i];
+		for (Player player : Bukkit.getOnlinePlayers()) {
 			DataStore dataStore = AntiXRay.instance.dataStore;
 			PlayerData playerData = dataStore.getOrCreatePlayerData(player);
 

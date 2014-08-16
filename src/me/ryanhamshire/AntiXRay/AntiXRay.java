@@ -115,9 +115,7 @@ public class AntiXRay extends JavaPlugin {
 	// on disable, close any open files and/or database connections
 	public void onDisable() {
 		// ensure all online players get their data saved
-		Player[] players = this.getServer().getOnlinePlayers();
-		for (int i = 0; i < players.length; i++) {
-			Player player = players[i];
+		for (Player player : Bukkit.getOnlinePlayers()) {
 			UUID uuid = player.getUniqueId();
 			this.dataStore.savePlayerData(uuid, this.dataStore.getOrCreatePlayerData(player));
 		}

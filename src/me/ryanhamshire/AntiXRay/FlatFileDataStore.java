@@ -42,7 +42,7 @@ class FlatFileDataStore extends DataStore {
 	}
 
 	private File getPlayerFile(UUID uuid) {
-		 return new File(playerDataFolderPath + File.separator + uuid.toString());
+		return new File(playerDataFolderPath + File.separator + uuid.toString());
 	}
 
 	@Override
@@ -201,5 +201,4 @@ class FlatFileDataStore extends DataStore {
 	void close() {
 		// nothing to do here because files are not left open after reading or writing
 	}
-
 }

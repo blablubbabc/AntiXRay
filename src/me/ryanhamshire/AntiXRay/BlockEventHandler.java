@@ -20,6 +20,7 @@ package me.ryanhamshire.AntiXRay;
 
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -91,9 +92,7 @@ public class BlockEventHandler implements Listener {
 									.info(player.getName() + " reached the mining speed limit at " + AntiXRay.getfriendlyLocationString(player.getLocation()) + ". He already reached it for about " + reachedLimitCounterString + " times.");
 
 							// notify online moderators
-							Player[] players = AntiXRay.instance.getServer().getOnlinePlayers();
-							for (int i = 0; i < players.length; i++) {
-								Player moderator = players[i];
+							for (Player moderator : Bukkit.getOnlinePlayers()) {
 								if (moderator.hasPermission("antixray.monitorxrayers")) {
 									AntiXRay.sendMessage(moderator, Messages.AdminNotification, player.getName(), reachedLimitCounterString);
 								}
