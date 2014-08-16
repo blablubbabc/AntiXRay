@@ -440,10 +440,14 @@ public class AntiXRay extends JavaPlugin {
 
 	// sends a message to a player
 	static void sendMessage(CommandSender receiver, String message) {
-		if (receiver == null) {
-			logger.info(message);
-		} else {
-			receiver.sendMessage(message);
+		// split on 'real' new lines and on escaped new line character sequence:
+		String[] messages = message.split("\n|\\\\n");
+		for (String msg : messages) {
+			if (receiver == null) {
+				logger.info(msg);
+			} else {
+				receiver.sendMessage(msg);
+			}
 		}
 	}
 
@@ -464,7 +468,7 @@ public class AntiXRay extends JavaPlugin {
 			runWhenDone.setResult(player.getUniqueId()).run();
 			return;
 		}
-		
+
 		Bukkit.getScheduler().runTaskAsynchronously(instance, new Runnable() {
 
 			@Override
@@ -480,7 +484,7 @@ public class AntiXRay extends JavaPlugin {
 				}
 
 				// Note: for now let's not use the uuid we got to import old playerdata here, because of potential issues regarding this being the wrong uuid in certain circumstances
-				
+
 				Bukkit.getScheduler().runTask(AntiXRay.instance, runWhenDone.setResult(uuid));
 			}
 		});

@@ -143,7 +143,7 @@ abstract class DataStore {
 
 		// initialize defaults
 		this.addDefault(defaults, Messages.CantBreakYet,
-				"&eWow, you're good at mining!  You have to wait about {0} minutes to break this block.  If you wait longer, you can mine even more of this.  Consider taking a break from mining to do something else, like building or exploring.  This mining speed limit keeps our ores safe from cheaters.  :)",
+				"&eWow, you're good at mining!  You have to wait about {0} minutes to break this block.  Consider taking a break from mining to do something else, like building or exploring.  This mining speed limit keeps our ores safe from cheaters.  :)\\n&eClick here for a brief explanation:\\n&e http://bit.ly/1yG91ge",
 				"0: minutes until the block can be broken  1: how often the player has already reached his limit (unused by default)");
 		this.addDefault(defaults, Messages.AdminNotification, "&e{0} reached the mining speed limit. He already reached it about {1} times.",
 				"0: player name  1: how often the player has already reached his limit");
