@@ -427,14 +427,16 @@ public class AntiXRay extends JavaPlugin {
 
 			@Override
 			public void run() {
-				final OfflinePlayer offline = Bukkit.getServer().getOfflinePlayer(playerName);
-				UUID uuid;
-				try {
-					// get uuid (casting to Player if the player is online might fix certain issues on older bukkit versions for at least online players)
-					uuid = offline instanceof Player ? ((Player) offline).getUniqueId() : offline.getUniqueId();
-				} catch (Throwable e) {
-					// well.. seems like the bukkit version we are running on does not support getting the uuid of offline players
-					uuid = null;
+				final OfflinePlayer offlinePlayer = Bukkit.getServer().getOfflinePlayer(playerName);
+				UUID uuid = null;
+				if (offlinePlayer.hasPlayedBefore()) {
+					try {
+						// get uuid (casting to Player if the player is online might fix certain issues on older bukkit versions for at least online players)
+						uuid = offlinePlayer instanceof Player ? ((Player) offlinePlayer).getUniqueId() : offlinePlayer.getUniqueId();
+					} catch (Throwable e) {
+						// well.. seems like the bukkit version we are running on does not support getting the uuid of offline players
+						uuid = null;
+					}
 				}
 
 				// Note: for now let's not use the uuid we got to import old playerdata here, because of potential issues regarding this being the wrong uuid in certain circumstances
