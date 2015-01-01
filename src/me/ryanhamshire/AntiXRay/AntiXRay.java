@@ -107,8 +107,6 @@ public class AntiXRay extends JavaPlugin {
 				// Failed to submit the stats :-(
 			}
 		}
-
-		logger.info("AntiXRay enabled.");
 	}
 
 	// on disable, close any open files and/or database connections
