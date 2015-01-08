@@ -80,7 +80,7 @@ public class AntiXRay extends JavaPlugin {
 		dataStore = new FlatFileDataStore();
 
 		// start the task to regularly give players the points they've earned for play time 20L ~ 1 second
-		Bukkit.getScheduler().runTaskTimer(this, new DeliverPointsTask(), 20L * 60 * 5, 20L * 60 * 5);
+		Bukkit.getScheduler().runTaskTimer(this, new DeliverPointsTask(), 20L * 60, 20L * 60);
 
 		// register event handlers:
 

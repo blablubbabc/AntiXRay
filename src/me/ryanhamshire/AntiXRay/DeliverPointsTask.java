@@ -24,14 +24,14 @@ import org.bukkit.entity.Player;
 
 // FEATURE: give players points for playing, as long as they're not away from their computer
 
-// runs every 5 minutes in the main thread, grants points per hour / 12 to each online player who appears to be actively playing
+// runs every minute in the main thread, grants points per hour / 60 to each online player who appears to be actively playing
 class DeliverPointsTask implements Runnable {
 
 	@Override
 	public void run() {
-		// ensure players get at least 1 point
-		int pointsEarned = AntiXRay.instance.config_pointsPerHour / 12;
-		if (pointsEarned == 0) pointsEarned = 1;
+		double pointsEarnedPrecise = AntiXRay.instance.config_pointsPerHour / 60.0D;
+		int pointsEarned = (int) pointsEarnedPrecise;
+		double pointsRemaining = pointsEarnedPrecise - (double) pointsEarned;
 
 		// for each online player
 		for (Player player : Bukkit.getOnlinePlayers()) {
@@ -39,15 +39,29 @@ class DeliverPointsTask implements Runnable {
 			PlayerData playerData = dataStore.getOrCreatePlayerData(player);
 
 			Location lastLocation = playerData.lastAfkCheckLocation;
+
+			// remember current location for next time
+			Location currentLocation = player.getLocation();
+			playerData.lastAfkCheckLocation = currentLocation;
+
 			// distance squared will throw an exception if the player has changed worlds
 			try {
 				// if he's not in a vehicle and has moved at least three blocks since the last check
-				if (!player.isInsideVehicle() && (lastLocation == null || lastLocation.distanceSquared(player.getLocation()) >= 9)) {
+				if (!player.isInsideVehicle() && (lastLocation == null || lastLocation.distanceSquared(currentLocation) >= 9)) {
 					playerData.points += pointsEarned;
+					playerData.remainingPoints += pointsRemaining;
+
+					// give additional remaining points of those have reached 1 point
+					int additionRemainingPoints = (int) playerData.remainingPoints;
+					if (additionRemainingPoints > 0) {
+						playerData.points += additionRemainingPoints;
+						playerData.remainingPoints -= (double) additionRemainingPoints;
+					}
 
 					// respect limits
 					if (playerData.points > AntiXRay.instance.config_maxPoints) {
 						playerData.points = AntiXRay.instance.config_maxPoints;
+						playerData.remainingPoints = 0.0D;
 					}
 
 					// intentionally NOT saving changes. accrued score will be saved on logout, when successfully breaking a block, or during server shutdown
@@ -56,8 +70,6 @@ class DeliverPointsTask implements Runnable {
 			} catch (Exception e) {
 			}
 
-			// remember current location for next time
-			playerData.lastAfkCheckLocation = player.getLocation();
 		}
 	}
 }

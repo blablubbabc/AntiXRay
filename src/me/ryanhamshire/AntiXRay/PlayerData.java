@@ -27,6 +27,9 @@ public class PlayerData {
 	public int points = AntiXRay.instance.config_startingPoints;
 	public int reachedLimitCount = 0;
 
+	// the amount of points the player received too little (less than 1.0)
+	public double remainingPoints = 0.0D;
+
 	// where this player was the last time we checked on him for earning points
 	public Location lastAfkCheckLocation = null;
 
