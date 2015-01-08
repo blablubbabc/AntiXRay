@@ -30,8 +30,6 @@ class DeliverPointsTask implements Runnable {
 	@Override
 	public void run() {
 		double pointsEarnedPrecise = AntiXRay.instance.config_pointsPerHour / 60.0D;
-		int pointsEarned = (int) pointsEarnedPrecise;
-		double pointsRemaining = pointsEarnedPrecise - (double) pointsEarned;
 
 		// for each online player
 		for (Player player : Bukkit.getOnlinePlayers()) {
@@ -48,15 +46,9 @@ class DeliverPointsTask implements Runnable {
 			try {
 				// if he's not in a vehicle and has moved at least three blocks since the last check
 				if (!player.isInsideVehicle() && (lastLocation == null || lastLocation.distanceSquared(currentLocation) >= 9)) {
-					playerData.points += pointsEarned;
-					playerData.remainingPoints += pointsRemaining;
-
-					// give additional remaining points of those have reached 1 point
-					int additionRemainingPoints = (int) playerData.remainingPoints;
-					if (additionRemainingPoints > 0) {
-						playerData.points += additionRemainingPoints;
-						playerData.remainingPoints -= (double) additionRemainingPoints;
-					}
+					double newPointsPrecise = playerData.points + playerData.remainingPoints + pointsEarnedPrecise;
+					playerData.points = (int) newPointsPrecise;
+					playerData.remainingPoints = newPointsPrecise - (double) playerData.points;
 
 					// respect limits
 					if (playerData.points > AntiXRay.instance.config_maxPoints) {
