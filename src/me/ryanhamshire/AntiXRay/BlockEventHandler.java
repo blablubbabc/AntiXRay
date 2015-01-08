@@ -55,7 +55,7 @@ public class BlockEventHandler implements Listener {
 		Block block = breakEvent.getBlock();
 
 		// get block protections for this world
-		List<BlockData> protections = AntiXRay.getPortections().getProtections(block.getWorld().getName());
+		List<BlockData> protections = AntiXRay.getProtections().getProtections(block.getWorld().getName());
 
 		// if there are no protections for this world, ignore the event
 		if (protections == null || protections.isEmpty()) return;
@@ -140,7 +140,7 @@ public class BlockEventHandler implements Listener {
 		Block block = placeEvent.getBlockPlaced();
 
 		// if the block's world isn't in the list of controlled worlds, ignore the event
-		if (!AntiXRay.getPortections().isWorldProtected(block.getWorld().getName())) return;
+		if (!AntiXRay.getProtections().isWorldProtected(block.getWorld().getName())) return;
 
 		// allows a player to break a block he just placed (he must have been charged points already to collect it in the first place) without cost
 		PlayerData playerData = dataStore.getOrCreatePlayerData(player);

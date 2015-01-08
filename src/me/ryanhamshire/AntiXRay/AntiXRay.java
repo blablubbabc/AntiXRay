@@ -377,7 +377,7 @@ public class AntiXRay extends JavaPlugin {
 		return blockData;
 	}
 
-	static ProtectedBlocks getPortections() {
+	static ProtectedBlocks getProtections() {
 		return AntiXRay.instance.protections;
 	}
 
