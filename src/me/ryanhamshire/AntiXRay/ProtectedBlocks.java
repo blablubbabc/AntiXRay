@@ -27,17 +27,20 @@ import java.util.Map;
 class ProtectedBlocks {
 
 	// stores protections by world <worldName -> protection>
-	private static Map<String, List<BlockData>> worlds = new HashMap<String, List<BlockData>>();
+	private final Map<String, List<BlockData>> worlds = new HashMap<String, List<BlockData>>();
 
-	public static void addWorld(String worldName) {
+	ProtectedBlocks() {
+	}
+
+	void addWorld(String worldName) {
 		worlds.put(worldName, new ArrayList<BlockData>());
 	}
 
-	public static void clear() {
+	void clear() {
 		worlds.clear();
 	}
 
-	public static void addProtection(String worldName, BlockData blockData) {
+	void addProtection(String worldName, BlockData blockData) {
 		List<BlockData> worldBlockData = worlds.get(worldName);
 		if (worldBlockData == null) {
 			worldBlockData = new ArrayList<BlockData>();
@@ -56,11 +59,11 @@ class ProtectedBlocks {
 		worldBlockData.add(blockData);
 	}
 
-	public static boolean isWorldProtected(String worldName) {
+	boolean isWorldProtected(String worldName) {
 		return worlds.containsKey(worldName);
 	}
 
-	public static List<BlockData> getProtections(String worldName) {
+	List<BlockData> getProtections(String worldName) {
 		return worlds.get(worldName);
 	}
 }

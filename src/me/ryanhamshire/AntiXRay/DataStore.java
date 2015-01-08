@@ -29,16 +29,16 @@ import org.bukkit.entity.Player;
 // abstract class for data storage.  implementing classes fill the implementation gaps for flat file storage and database storage, respectively
 abstract class DataStore {
 
+	// path information, for where stuff stored on disk is well... stored
+	final static String dataLayerFolderPath = "plugins" + File.separator + "AntiXRayData";
+	final static String configFilePath = dataLayerFolderPath + File.separator + "config.yml";
+	final static String messagesFilePath = dataLayerFolderPath + File.separator + "messages.yml";
+
 	// in-memory cache for player data
 	private final Map<String, PlayerData> playerUUIDToPlayerDataMap = new HashMap<String, PlayerData>();
 
 	// in-memory cache for messages
 	private String[] messages;
-
-	// path information, for where stuff stored on disk is well... stored
-	final static String dataLayerFolderPath = "plugins" + File.separator + "AntiXRayData";
-	final static String configFilePath = dataLayerFolderPath + File.separator + "config.yml";
-	final static String messagesFilePath = dataLayerFolderPath + File.separator + "messages.yml";
 
 	// initialization varies depending on flat file or database storage
 	void initialize() {

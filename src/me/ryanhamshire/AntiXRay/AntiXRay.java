@@ -65,10 +65,14 @@ public class AntiXRay extends JavaPlugin {
 	public boolean config_exemptCreativeModePlayers; // whether creative mode players should be exempt from the rules
 	public boolean config_notifyOnLimitReached; // whether to notify online moderators when a player reaches his limit
 
+	public ProtectedBlocks protections;
+
 	// initializes well... everything
 	public void onEnable() {
 		instance = this;
 		logger = this.getLogger();
+
+		protections = new ProtectedBlocks();
 
 		// load configuration
 		this.loadConfig();
@@ -215,7 +219,7 @@ public class AntiXRay extends JavaPlugin {
 			// Map<String, BlockData> worldSpecificOres = new HashMap<String, BlockData>();
 			worldBlockData.put(worldName, worldOres);
 			// add this world:
-			ProtectedBlocks.addWorld(worldName);
+			protections.addWorld(worldName);
 			// validate world:
 			World world = getServer().getWorld(worldName);
 			if (world == null) {
@@ -276,13 +280,13 @@ public class AntiXRay extends JavaPlugin {
 		}
 
 		// clear old loaded world protections:
-		ProtectedBlocks.clear();
+		protections.clear();
 
 		// set the loaded protections for all worlds:
 		for (Entry<String, Map<String, BlockData>> worldData : worldBlockData.entrySet()) {
 			String worldName = worldData.getKey();
 			for (BlockData blockData : worldData.getValue().values()) {
-				ProtectedBlocks.addProtection(worldName, blockData);
+				protections.addProtection(worldName, blockData);
 			}
 		}
 
@@ -371,6 +375,10 @@ public class AntiXRay extends JavaPlugin {
 			}
 		}
 		return blockData;
+	}
+
+	static ProtectedBlocks getPortections() {
+		return AntiXRay.instance.protections;
 	}
 
 	// sends a message to a player

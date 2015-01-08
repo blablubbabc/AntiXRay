@@ -38,7 +38,7 @@ class EntityEventHandler implements Listener {
 		Location location = explodeEvent.getLocation();
 
 		// get block protections for this world
-		List<BlockData> protections = ProtectedBlocks.getProtections(location.getWorld().getName());
+		List<BlockData> protections = AntiXRay.getPortections().getProtections(location.getWorld().getName());
 
 		// don't do anything when the explosion world isn't one of the controlled worlds
 		if (protections == null || protections.isEmpty()) return;
