@@ -56,11 +56,11 @@ class FlatFileDataStore extends DataStore {
 	@Override
 	PlayerData loadOrCreatePlayerDataFromStorage(Player player) {
 		UUID uuid = player.getUniqueId();
-		PlayerData playerData = loadPlayerDataFromStorageIfExist(uuid);
+		PlayerData playerData = this.loadPlayerDataFromStorageIfExist(uuid);
 
 		// if it doesn't exist, set default points
 		if (playerData == null) {
-			playerData = getDefaultPlayerData(player);
+			playerData = this.getDefaultPlayerData(player);
 
 			// check if we have some old player data for this player (from pre MC 1.8):
 			String playerName = player.getName();

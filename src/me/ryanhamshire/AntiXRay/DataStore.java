@@ -35,7 +35,7 @@ abstract class DataStore {
 	final static String messagesFilePath = dataLayerFolderPath + File.separator + "messages.yml";
 
 	// in-memory cache for player data
-	private final Map<String, PlayerData> playerUUIDToPlayerDataMap = new HashMap<String, PlayerData>();
+	private final Map<UUID, PlayerData> playerUUIDToPlayerDataMap = new HashMap<UUID, PlayerData>();
 
 	// in-memory cache for messages
 	private String[] messages;
@@ -48,34 +48,34 @@ abstract class DataStore {
 
 	// removes cached player data from memory
 	void clearCachedPlayerData(UUID uuid) {
-		playerUUIDToPlayerDataMap.remove(uuid.toString());
+		playerUUIDToPlayerDataMap.remove(uuid);
 	}
 
 	// retrieves player data from memory or file, as necessary
 	// if the player has never been on the server before, this will return a fresh player data with default values
 	public PlayerData getOrCreatePlayerData(Player player) {
-		String uuidS = player.getUniqueId().toString();
+		UUID uuid = player.getUniqueId();
 
 		// first, look in memory
-		PlayerData playerData = playerUUIDToPlayerDataMap.get(uuidS);
+		PlayerData playerData = playerUUIDToPlayerDataMap.get(uuid);
 
 		// if not there, look on disk
 		if (playerData == null) {
 			playerData = this.loadOrCreatePlayerDataFromStorage(player);
 
 			// shove that new player data into the hash map cache
-			playerUUIDToPlayerDataMap.put(uuidS, playerData);
+			playerUUIDToPlayerDataMap.put(uuid, playerData);
 		}
 
 		// try the hash map again. if it's STILL not there, we have a bug to fix
-		return playerUUIDToPlayerDataMap.get(uuidS);
+		return playerUUIDToPlayerDataMap.get(uuid);
 	}
 
 	// returns PlayerData for a player with the given uuid and RETURNS NULL if no PlayerData was found for this uuid.
 	// The loaded playerData will not be saved in memory and is meant for one-time lookup purposes.
 	public PlayerData getPlayerDataIfExist(UUID uuid) {
 		// first, look in memory
-		PlayerData playerData = playerUUIDToPlayerDataMap.get(uuid.toString());
+		PlayerData playerData = playerUUIDToPlayerDataMap.get(uuid);
 
 		// if not there, look on disk
 		if (playerData == null) {
@@ -88,7 +88,7 @@ abstract class DataStore {
 	// default points = max when the player has played on the server before
 	// otherwise, use starting points from config file
 	int getDefaultPoints(Player player) {
-		return getDefaultPoints(player.hasPlayedBefore());
+		return this.getDefaultPoints(player.hasPlayedBefore());
 	}
 
 	int getDefaultPoints(boolean hasPlayedBefore) {
@@ -104,7 +104,7 @@ abstract class DataStore {
 		PlayerData playerData = new PlayerData();
 
 		// default points
-		playerData.points = getDefaultPoints(player);
+		playerData.points = this.getDefaultPoints(player);
 
 		return playerData;
 	}
@@ -140,7 +140,7 @@ abstract class DataStore {
 		Messages[] messageIDs = Messages.values();
 		messages = new String[Messages.values().length];
 
-		HashMap<String, CustomizableMessage> defaults = new HashMap<String, CustomizableMessage>();
+		Map<String, CustomizableMessage> defaults = new HashMap<String, CustomizableMessage>();
 
 		// initialize defaults
 		this.addDefault(defaults, Messages.CantBreakYet,
@@ -204,7 +204,7 @@ abstract class DataStore {
 	}
 
 	// helper for above, adds a default message and notes to go with a message ID
-	private void addDefault(HashMap<String, CustomizableMessage> defaults, Messages id, String text, String notes) {
+	private void addDefault(Map<String, CustomizableMessage> defaults, Messages id, String text, String notes) {
 		CustomizableMessage message = new CustomizableMessage(id, text, notes);
 		defaults.put(id.name(), message);
 	}
