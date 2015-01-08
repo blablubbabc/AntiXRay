@@ -1,19 +1,19 @@
 /*
-    AntiXRay Server Plugin for Minecraft
-    Copyright (C) 2012 Ryan Hamshire
+	AntiXRay Server Plugin for Minecraft
+	Copyright (C) 2012 Ryan Hamshire
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package me.ryanhamshire.AntiXRay;
@@ -34,7 +34,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 public class BlockEventHandler implements Listener {
 
 	// convenience reference to singleton datastore
-	private DataStore dataStore;
+	private final DataStore dataStore;
 
 	// boring typical constructor
 	public BlockEventHandler(DataStore dataStore) {
@@ -61,7 +61,7 @@ public class BlockEventHandler implements Listener {
 		if (protections == null || protections.isEmpty()) return;
 
 		// allows a player to break a block he just placed (he must have been charged points already to collect it in the first place) without cost
-		PlayerData playerData = this.dataStore.getOrCreatePlayerData(player);
+		PlayerData playerData = dataStore.getOrCreatePlayerData(player);
 		if (playerData.lastPlacedBlockLocation != null && block.getLocation().equals(playerData.lastPlacedBlockLocation)) {
 			playerData.lastPlacedBlockLocation = null;
 			return;
@@ -89,8 +89,8 @@ public class BlockEventHandler implements Listener {
 						// if configured to do so, make an entry in the log and notify any online moderators
 						if (AntiXRay.instance.config_notifyOnLimitReached) {
 							// make log entry
-							AntiXRay.logger
-											.info(player.getName() + " reached the mining speed limit at " + AntiXRay.getfriendlyLocationString(player.getLocation()) + ". He already reached it for about " + reachedLimitCounterString + " times.");
+							AntiXRay.logger.info(player.getName() + " reached the mining speed limit at " + AntiXRay.getfriendlyLocationString(player.getLocation())
+									+ ". He already reached it for about " + reachedLimitCounterString + " times.");
 
 							// notify online moderators
 							for (Player moderator : Bukkit.getOnlinePlayers()) {
@@ -115,7 +115,9 @@ public class BlockEventHandler implements Listener {
 					// otherwise, subtract the value of the block from his points
 					playerData.points -= blockData.getValue();
 					// make sure that the players point are lower than the maxPoints limit:
-					if (!AntiXRay.instance.config_ignoreMaxPointsForBlockRatio && playerData.points > AntiXRay.instance.config_maxPoints) playerData.points = AntiXRay.instance.config_maxPoints;
+					if (!AntiXRay.instance.config_ignoreMaxPointsForBlockRatio && playerData.points > AntiXRay.instance.config_maxPoints) {
+						playerData.points = AntiXRay.instance.config_maxPoints;
+					}
 				}
 
 				// once a match is found, no need to look farther
@@ -141,7 +143,7 @@ public class BlockEventHandler implements Listener {
 		if (!ProtectedBlocks.isWorldProtected(block.getWorld().getName())) return;
 
 		// allows a player to break a block he just placed (he must have been charged points already to collect it in the first place) without cost
-		PlayerData playerData = this.dataStore.getOrCreatePlayerData(player);
+		PlayerData playerData = dataStore.getOrCreatePlayerData(player);
 		playerData.lastPlacedBlockLocation = block.getLocation();
 	}
 }

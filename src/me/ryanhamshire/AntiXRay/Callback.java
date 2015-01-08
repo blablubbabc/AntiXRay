@@ -15,7 +15,7 @@ public abstract class Callback<T> implements Runnable {
 	}
 
 	public T getResult() {
-		return this.result;
+		return result;
 	}
 
 	protected abstract void onComplete(T result);

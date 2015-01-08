@@ -1,19 +1,19 @@
 /*
-    AntiXRay Server Plugin for Minecraft
-    Copyright (C) 2012 Ryan Hamshire
+	AntiXRay Server Plugin for Minecraft
+	Copyright (C) 2012 Ryan Hamshire
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package me.ryanhamshire.AntiXRay;
@@ -39,7 +39,7 @@ class PlayerEventHandler implements Listener {
 	void onPlayerJoin(PlayerJoinEvent event) {
 		// get his player data, forcing it to initialize if we've never seen him before
 		@SuppressWarnings("unused")
-		PlayerData playerData = this.dataStore.getOrCreatePlayerData(event.getPlayer());
+		PlayerData playerData = dataStore.getOrCreatePlayerData(event.getPlayer());
 	}
 
 	// when a player quits...
@@ -49,9 +49,9 @@ class PlayerEventHandler implements Listener {
 		UUID uuid = player.getUniqueId();
 
 		// save player data, just in case he accrued some block points which haven't been saved yet
-		this.dataStore.savePlayerData(uuid, this.dataStore.getOrCreatePlayerData(player));
+		dataStore.savePlayerData(uuid, dataStore.getOrCreatePlayerData(player));
 
 		// drop player data from memory
-		this.dataStore.clearCachedPlayerData(uuid);
+		dataStore.clearCachedPlayerData(uuid);
 	}
 }

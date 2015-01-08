@@ -1,19 +1,19 @@
 /*
-    AntiXRay Server Plugin for Minecraft
-    Copyright (C) 2012 Ryan Hamshire
+	AntiXRay Server Plugin for Minecraft
+	Copyright (C) 2012 Ryan Hamshire
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package me.ryanhamshire.AntiXRay;
@@ -40,7 +40,6 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.mcstats.Metrics;
 
@@ -69,31 +68,26 @@ public class AntiXRay extends JavaPlugin {
 	// initializes well... everything
 	public void onEnable() {
 		instance = this;
-		logger = getLogger();
+		logger = this.getLogger();
 
 		// load configuration
-		loadConfig();
+		this.loadConfig();
 
-		this.dataStore = new FlatFileDataStore();
+		dataStore = new FlatFileDataStore();
 
 		// start the task to regularly give players the points they've earned for play time 20L ~ 1 second
-		DeliverPointsTask task = new DeliverPointsTask();
-		this.getServer().getScheduler().scheduleSyncRepeatingTask(this, task, 20L * 60 * 5, 20L * 60 * 5);
+		Bukkit.getScheduler().runTaskTimer(this, new DeliverPointsTask(), 20L * 60 * 5, 20L * 60 * 5);
 
-		// register for events
-		PluginManager pluginManager = this.getServer().getPluginManager();
+		// register event handlers:
 
 		// player events
-		PlayerEventHandler playerEventHandler = new PlayerEventHandler(this.dataStore);
-		pluginManager.registerEvents(playerEventHandler, this);
+		Bukkit.getPluginManager().registerEvents(new PlayerEventHandler(dataStore), this);
 
 		// block events
-		BlockEventHandler blockEventHandler = new BlockEventHandler(this.dataStore);
-		pluginManager.registerEvents(blockEventHandler, this);
+		Bukkit.getPluginManager().registerEvents(new BlockEventHandler(dataStore), this);
 
 		// entity events
-		EntityEventHandler entityEventHandler = new EntityEventHandler();
-		pluginManager.registerEvents(entityEventHandler, this);
+		Bukkit.getPluginManager().registerEvents(new EntityEventHandler(), this);
 
 		// command handler
 		this.getCommand("antixray").setExecutor(new CommandHandler());
@@ -114,10 +108,10 @@ public class AntiXRay extends JavaPlugin {
 		// ensure all online players get their data saved
 		for (Player player : Bukkit.getOnlinePlayers()) {
 			UUID uuid = player.getUniqueId();
-			this.dataStore.savePlayerData(uuid, this.dataStore.getOrCreatePlayerData(player));
+			dataStore.savePlayerData(uuid, dataStore.getOrCreatePlayerData(player));
 		}
 
-		this.dataStore.close();
+		dataStore.close();
 	}
 
 	void loadConfig() {
@@ -137,26 +131,26 @@ public class AntiXRay extends JavaPlugin {
 		// read configuration settings and set default values if necessary:
 		ConfigurationSection baseSection = config.getConfigurationSection("AntiXRay");
 		if (baseSection == null) baseSection = config.createSection("AntiXRay");
-		this.config_metrics = baseSection.getBoolean("EnableMetricsTracking", true);
-		this.config_startingPoints = baseSection.getInt("NewPlayerStartingPoints", -400);
-		this.config_pointsPerHour = baseSection.getInt("PointsEarnedPerHourPlayed", 800);
-		this.config_maxPoints = baseSection.getInt("MaximumPoints", 1600);
+		config_metrics = baseSection.getBoolean("EnableMetricsTracking", true);
+		config_startingPoints = baseSection.getInt("NewPlayerStartingPoints", -400);
+		config_pointsPerHour = baseSection.getInt("PointsEarnedPerHourPlayed", 800);
+		config_maxPoints = baseSection.getInt("MaximumPoints", 1600);
 
-		this.config_ignoreMaxPointsForBlockRatio = baseSection.getBoolean("IgnoreMaxPointsForBlockRatio", true);
-		this.config_exemptCreativeModePlayers = baseSection.getBoolean("ExemptCreativeModePlayers", true);
-		this.config_notifyOnLimitReached = baseSection.getBoolean("NotifyOnMiningLimitReached", false);
+		config_ignoreMaxPointsForBlockRatio = baseSection.getBoolean("IgnoreMaxPointsForBlockRatio", true);
+		config_exemptCreativeModePlayers = baseSection.getBoolean("ExemptCreativeModePlayers", true);
+		config_notifyOnLimitReached = baseSection.getBoolean("NotifyOnMiningLimitReached", false);
 
 		// default max height: only checks for blocks broken below this height
 		int defaultHeight = baseSection.getInt("DefaultMaxHeight", 63);
 
 		// write all those loaded values from above back to file (for defaults):
-		baseSection.set("NewPlayerStartingPoints", this.config_startingPoints);
-		baseSection.set("PointsEarnedPerHourPlayed", this.config_pointsPerHour);
-		baseSection.set("MaximumPoints", this.config_maxPoints);
+		baseSection.set("NewPlayerStartingPoints", config_startingPoints);
+		baseSection.set("PointsEarnedPerHourPlayed", config_pointsPerHour);
+		baseSection.set("MaximumPoints", config_maxPoints);
 
-		baseSection.set("IgnoreMaxPointsForBlockRatio", this.config_ignoreMaxPointsForBlockRatio);
-		baseSection.set("ExemptCreativeModePlayers", this.config_exemptCreativeModePlayers);
-		baseSection.set("NotifyOnMiningLimitReached", this.config_notifyOnLimitReached);
+		baseSection.set("IgnoreMaxPointsForBlockRatio", config_ignoreMaxPointsForBlockRatio);
+		baseSection.set("ExemptCreativeModePlayers", config_exemptCreativeModePlayers);
+		baseSection.set("NotifyOnMiningLimitReached", config_notifyOnLimitReached);
 
 		baseSection.set("DefaultMaxHeight", defaultHeight);
 

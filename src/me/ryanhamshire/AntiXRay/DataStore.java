@@ -1,19 +1,19 @@
 /*
-    AntiXRay Server Plugin for Minecraft
-    Copyright (C) 2012 Ryan Hamshire
+	AntiXRay Server Plugin for Minecraft
+	Copyright (C) 2012 Ryan Hamshire
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package me.ryanhamshire.AntiXRay;
@@ -30,7 +30,7 @@ import org.bukkit.entity.Player;
 abstract class DataStore {
 
 	// in-memory cache for player data
-	private Map<String, PlayerData> playerUUIDToPlayerDataMap = new HashMap<String, PlayerData>();
+	private final Map<String, PlayerData> playerUUIDToPlayerDataMap = new HashMap<String, PlayerData>();
 
 	// in-memory cache for messages
 	private String[] messages;
@@ -48,7 +48,7 @@ abstract class DataStore {
 
 	// removes cached player data from memory
 	void clearCachedPlayerData(UUID uuid) {
-		this.playerUUIDToPlayerDataMap.remove(uuid.toString());
+		playerUUIDToPlayerDataMap.remove(uuid.toString());
 	}
 
 	// retrieves player data from memory or file, as necessary
@@ -57,25 +57,25 @@ abstract class DataStore {
 		String uuidS = player.getUniqueId().toString();
 
 		// first, look in memory
-		PlayerData playerData = this.playerUUIDToPlayerDataMap.get(uuidS);
+		PlayerData playerData = playerUUIDToPlayerDataMap.get(uuidS);
 
 		// if not there, look on disk
 		if (playerData == null) {
 			playerData = this.loadOrCreatePlayerDataFromStorage(player);
 
 			// shove that new player data into the hash map cache
-			this.playerUUIDToPlayerDataMap.put(uuidS, playerData);
+			playerUUIDToPlayerDataMap.put(uuidS, playerData);
 		}
 
 		// try the hash map again. if it's STILL not there, we have a bug to fix
-		return this.playerUUIDToPlayerDataMap.get(uuidS);
+		return playerUUIDToPlayerDataMap.get(uuidS);
 	}
 
 	// returns PlayerData for a player with the given uuid and RETURNS NULL if no PlayerData was found for this uuid.
 	// The loaded playerData will not be saved in memory and is meant for one-time lookup purposes.
 	public PlayerData getPlayerDataIfExist(UUID uuid) {
 		// first, look in memory
-		PlayerData playerData = this.playerUUIDToPlayerDataMap.get(uuid.toString());
+		PlayerData playerData = playerUUIDToPlayerDataMap.get(uuid.toString());
 
 		// if not there, look on disk
 		if (playerData == null) {
@@ -138,7 +138,7 @@ abstract class DataStore {
 	// loads user-facing messages from the messages.yml configuration file into memory
 	private void loadMessages() {
 		Messages[] messageIDs = Messages.values();
-		this.messages = new String[Messages.values().length];
+		messages = new String[Messages.values().length];
 
 		HashMap<String, CustomizableMessage> defaults = new HashMap<String, CustomizableMessage>();
 
@@ -184,7 +184,7 @@ abstract class DataStore {
 			config.set("Messages." + messageID.name() + ".Text", message);
 
 			// colorize and store message
-			this.messages[messageID.ordinal()] = ChatColor.translateAlternateColorCodes('&', message);
+			messages[messageID.ordinal()] = ChatColor.translateAlternateColorCodes('&', message);
 
 			if (messageData.notes != null) {
 				messageData.notes = config.getString("Messages." + messageID.name() + ".Notes", messageData.notes);
