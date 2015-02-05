@@ -1,7 +1,7 @@
 name: AntiXRay
 main: me.ryanhamshire.AntiXRay.AntiXRay
 softdepend: [Multiverse-Core, My Worlds, Transporter]
-version: 1.8.3
+version: 1.8.4
 author: blablubbabc
 authors: [bigscary, blablubbabc]
 website: dev.bukkit.org/server-mods/anti-x-ray/
