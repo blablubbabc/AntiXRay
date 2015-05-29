@@ -91,7 +91,7 @@ public class AntiXRay extends JavaPlugin {
 		Bukkit.getPluginManager().registerEvents(new BlockEventHandler(dataStore), this);
 
 		// entity events
-		Bukkit.getPluginManager().registerEvents(new EntityEventHandler(), this);
+		Bukkit.getPluginManager().registerEvents(new ExplosionsListener(), this);
 
 		// command handler
 		this.getCommand("antixray").setExecutor(new CommandHandler());

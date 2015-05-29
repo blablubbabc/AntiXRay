@@ -22,28 +22,27 @@ import java.util.List;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;
-
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityExplodeEvent;
 
-// handles events related to entities
-class EntityEventHandler implements Listener {
+/**
+ * Protects protected blocks from being destroyed/broken by explosions.
+ * Prevents players from circumventing the anti-xray limitations by using explosives to anonymously break blocks.
+ */
+class ExplosionsListener implements Listener {
 
-	// when there's an explosion...
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
-	public void onEntityExplode(EntityExplodeEvent explodeEvent) {
-		List<Block> blocks = explodeEvent.blockList();
-		Location location = explodeEvent.getLocation();
+	void onEntityExplode(EntityExplodeEvent event) {
+		List<Block> blocks = event.blockList();
+		Location location = event.getLocation();
 
 		// get block protections for this world
 		List<BlockData> protections = AntiXRay.getProtections().getProtections(location.getWorld().getName());
 
 		// don't do anything when the explosion world isn't one of the controlled worlds
 		if (protections == null || protections.isEmpty()) return;
-
-		// FEATURE: don't allow players to circumvent the anti xray limitation by using explosives to anonymously break a block
 
 		// for each block that will be broken by the explosion
 		for (int i = 0; i < blocks.size(); i++) {

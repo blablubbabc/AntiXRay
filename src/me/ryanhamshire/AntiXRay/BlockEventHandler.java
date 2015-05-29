@@ -31,19 +31,19 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 
 // event handlers related to blocks
-public class BlockEventHandler implements Listener {
+class BlockEventHandler implements Listener {
 
 	// convenience reference to singleton datastore
 	private final DataStore dataStore;
 
 	// boring typical constructor
-	public BlockEventHandler(DataStore dataStore) {
+	BlockEventHandler(DataStore dataStore) {
 		this.dataStore = dataStore;
 	}
 
 	// when a player breaks a block... priority high, so other plugins can first cancel block breaking
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
-	public void onBlockBreak(BlockBreakEvent breakEvent) {
+	void onBlockBreak(BlockBreakEvent breakEvent) {
 		Player player = breakEvent.getPlayer();
 
 		// ignore players with the bypass permission
@@ -128,7 +128,7 @@ public class BlockEventHandler implements Listener {
 
 	// when a player places a block...
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-	public void onBlockPlace(BlockPlaceEvent placeEvent) {
+	void onBlockPlace(BlockPlaceEvent placeEvent) {
 		Player player = placeEvent.getPlayer();
 
 		// ignore players with the bypass permission
