@@ -25,6 +25,7 @@ import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 
 /**
@@ -35,8 +36,20 @@ class ExplosionsListener implements Listener {
 
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
 	void onEntityExplode(EntityExplodeEvent event) {
-		List<Block> blocks = event.blockList();
 		Location location = event.getLocation();
+		List<Block> blocks = event.blockList();
+		this.handleExplosion(location, blocks);
+	}
+
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+	void onBlockExplode(BlockExplodeEvent event) {
+		Location location = event.getBlock().getLocation();
+		List<Block> blocks = event.blockList();
+		this.handleExplosion(location, blocks);
+	}
+
+	void handleExplosion(Location location, List<Block> blocks) {
+		assert location != null && blocks != null;
 
 		// get block protections for this world
 		List<BlockData> protections = AntiXRay.getProtections().getProtections(location.getWorld().getName());
