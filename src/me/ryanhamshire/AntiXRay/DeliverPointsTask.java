@@ -91,7 +91,7 @@ class DeliverPointsTask implements Runnable {
 			}
 
 			AntiXRay.debug("Player '" + player.getName() + "' received " + decimalFormat.format(pointsEarnedPrecise) + " points and has now "
-					+ playerData.points + " (+" + decimalFormat.format(playerData.remainingPoints) + ") points.");
+					+ playerData.points + " (+" + decimalFormat.format(playerData.remainingPoints) + ") points (max: " + AntiXRay.instance.config_maxPoints + ").");
 
 			// intentionally NOT saving changes. accrued score will be saved on logout, when successfully breaking a
 			// block, or during server shutdown
