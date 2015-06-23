@@ -42,26 +42,49 @@ class DeliverPointsTask implements Runnable {
 			Location currentLocation = player.getLocation();
 			playerData.lastAfkCheckLocation = currentLocation;
 
-			// distance squared will throw an exception if the player has changed worlds
-			try {
-				// if he's not in a vehicle and has moved at least three blocks since the last check
-				if (!player.isInsideVehicle() && (lastLocation == null || lastLocation.distanceSquared(currentLocation) >= 9)) {
-					double newPointsPrecise = playerData.points + playerData.remainingPoints + pointsEarnedPrecise;
-					playerData.points = (int) newPointsPrecise;
-					playerData.remainingPoints = newPointsPrecise - (double) playerData.points;
-
-					// respect limits
-					if (playerData.points > AntiXRay.instance.config_maxPoints) {
-						playerData.points = AntiXRay.instance.config_maxPoints;
-						playerData.remainingPoints = 0.0D;
+			// check if the player might be afk
+			boolean afk = false;
+			if (lastLocation != null) {
+				if (lastLocation.getWorld().equals(currentLocation.getWorld())) {
+					// player did move less then three blocks since the last check,
+					// or might try to circumvent afk detection by letting a vehicle move himself around:
+					if (player.isInsideVehicle() || lastLocation.distanceSquared(currentLocation) <= 9.0D) {
+						// considering player to be afk since the last check:
+						afk = true;
 					}
-
-					// intentionally NOT saving changes. accrued score will be saved on logout, when successfully breaking a block, or during server shutdown
-					// dataStore.savePlayerData(player.getName(), playerData);
 				}
-			} catch (Exception e) {
 			}
 
+			if (afk) {
+				playerData.afkMinutes++;
+				// don't punish players for being afk for only a short time,
+				// or for being unlucky to be inside a vehicle when we check:
+				if (playerData.afkMinutes >= 5) {
+					// this player is already afk for quite some time now,
+					// we can be sure now that the player is really afk
+					// skip this player from getting points from now on, while being afk
+					continue;
+				}
+			} else {
+				// player is not afk, reset afkMinutes:
+				playerData.afkMinutes = 0;
+			}
+
+			// deliver points:
+
+			double newPointsPrecise = playerData.points + playerData.remainingPoints + pointsEarnedPrecise;
+			playerData.points = (int) newPointsPrecise;
+			playerData.remainingPoints = newPointsPrecise - (double) playerData.points;
+
+			// respect limits
+			if (playerData.points > AntiXRay.instance.config_maxPoints) {
+				playerData.points = AntiXRay.instance.config_maxPoints;
+				playerData.remainingPoints = 0.0D;
+			}
+
+			// intentionally NOT saving changes. accrued score will be saved on logout, when successfully breaking a
+			// block, or during server shutdown
+			// dataStore.savePlayerData(player.getName(), playerData);
 		}
 	}
 }

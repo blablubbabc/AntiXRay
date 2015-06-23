@@ -32,6 +32,8 @@ public class PlayerData {
 
 	// where this player was the last time we checked on him for earning points
 	public Location lastAfkCheckLocation = null;
+	// the time in minutes the player is already considered being afk in a row
+	public int afkMinutes = 0;
 
 	// whether or not this player has reached his mining limit this play session
 	public boolean reachedLimitThisSession = false;
