@@ -29,7 +29,7 @@ import org.bukkit.entity.Player;
 // runs every minute in the main thread, grants points per hour / 60 to each online player who appears to be actively playing
 class DeliverPointsTask implements Runnable {
 
-	private static final DecimalFormat decimalFormat = new DecimalFormat("#.##");
+	private static final DecimalFormat decimalFormat = new DecimalFormat("0.0#");
 
 	DeliverPointsTask() {
 	}
