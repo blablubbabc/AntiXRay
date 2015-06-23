@@ -18,6 +18,8 @@
 
 package me.ryanhamshire.AntiXRay;
 
+import java.text.DecimalFormat;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -26,6 +28,11 @@ import org.bukkit.entity.Player;
 
 // runs every minute in the main thread, grants points per hour / 60 to each online player who appears to be actively playing
 class DeliverPointsTask implements Runnable {
+
+	private static final DecimalFormat decimalFormat = new DecimalFormat("#.##");
+
+	DeliverPointsTask() {
+	}
 
 	@Override
 	public void run() {
@@ -57,6 +64,7 @@ class DeliverPointsTask implements Runnable {
 
 			if (afk) {
 				playerData.afkMinutes++;
+				AntiXRay.debug("Player '" + player.getName() + "' seems to be AFK since " + playerData.afkMinutes + " minutes.");
 				// don't punish players for being afk for only a short time,
 				// or for being unlucky to be inside a vehicle when we check:
 				if (playerData.afkMinutes >= 5) {
@@ -81,6 +89,9 @@ class DeliverPointsTask implements Runnable {
 				playerData.points = AntiXRay.instance.config_maxPoints;
 				playerData.remainingPoints = 0.0D;
 			}
+
+			AntiXRay.debug("Player '" + player.getName() + "' received " + decimalFormat.format(pointsEarnedPrecise) + " points and has now "
+					+ playerData.points + " (+" + decimalFormat.format(playerData.remainingPoints) + ") points.");
 
 			// intentionally NOT saving changes. accrued score will be saved on logout, when successfully breaking a
 			// block, or during server shutdown

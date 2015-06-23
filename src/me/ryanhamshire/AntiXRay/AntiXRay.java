@@ -57,11 +57,13 @@ public class AntiXRay extends JavaPlugin {
 	// custom configuration path separator, as some users use dots in their world names:
 	public static final char DOT = '\uF8FF';
 	// configuration variables, loaded/saved from a config.yml
+	public boolean debug;
 	public boolean config_metrics;
 	public int config_pointsPerHour; // how quickly players earn "points" which allow them to mine valuables
 	public int config_maxPoints; // the upper limit on points
 	public int config_startingPoints; // initial points for players who are new to the server
-	public boolean config_ignoreMaxPointsForBlockRatio; // whether it shall ignore if a player has more than maxPoints points when receiving them via breaking blocks (block ratio)
+	public boolean config_ignoreMaxPointsForBlockRatio; // whether it shall ignore if a player has more than maxPoints
+														// points when receiving them via breaking blocks (block ratio)
 	public boolean config_exemptCreativeModePlayers; // whether creative mode players should be exempt from the rules
 	public boolean config_notifyOnLimitReached; // whether to notify online moderators when a player reaches his limit
 
@@ -119,7 +121,7 @@ public class AntiXRay extends JavaPlugin {
 	}
 
 	void loadConfig() {
-		// init fresh config with custom path separator, as some users might have world names with dots in it:
+		// initialize fresh config with custom path separator, as some users might have world names with dots in it:
 		FileConfiguration config = new YamlConfiguration();
 		config.options().pathSeparator(DOT);
 		try {
@@ -135,6 +137,7 @@ public class AntiXRay extends JavaPlugin {
 		// read configuration settings and set default values if necessary:
 		ConfigurationSection baseSection = config.getConfigurationSection("AntiXRay");
 		if (baseSection == null) baseSection = config.createSection("AntiXRay");
+		debug = baseSection.getBoolean("DebugMode", false);
 		config_metrics = baseSection.getBoolean("EnableMetricsTracking", true);
 		config_startingPoints = baseSection.getInt("NewPlayerStartingPoints", -400);
 		config_pointsPerHour = baseSection.getInt("PointsEarnedPerHourPlayed", 800);
@@ -148,6 +151,7 @@ public class AntiXRay extends JavaPlugin {
 		int defaultHeight = baseSection.getInt("DefaultMaxHeight", 63);
 
 		// write all those loaded values from above back to file (for defaults):
+		baseSection.set("DebugMode", debug);
 		baseSection.set("NewPlayerStartingPoints", config_startingPoints);
 		baseSection.set("PointsEarnedPerHourPlayed", config_pointsPerHour);
 		baseSection.set("MaximumPoints", config_maxPoints);
@@ -229,7 +233,8 @@ public class AntiXRay extends JavaPlugin {
 			// world specific informations:
 			ConfigurationSection worldSection = worldsSection.getConfigurationSection(worldName);
 
-			// remove old world section from config, but keep world name / keep world enabled, it gets rewritten with valid data afterwards:
+			// remove old world section from config, but keep world name / keep world enabled, it gets rewritten with
+			// valid data afterwards:
 			worldsSection.set(worldName, "");
 
 			if (worldSection != null) {
@@ -239,7 +244,8 @@ public class AntiXRay extends JavaPlugin {
 				// add default ores with worldHeight:
 				for (Entry<String, BlockData> defaultOre : defaultProtections.entrySet()) {
 					BlockData defaultData = defaultOre.getValue();
-					// using worldHeight for the block data here, so that the world specific height value can overwrite the height of the default ores
+					// using worldHeight for the block data here, so that the world specific height value can overwrite
+					// the height of the default ores
 					// so users don't have to overwrite the height for each specific default ore in each world
 					worldOres.put(defaultOre.getKey(), new BlockData(defaultData.getId(), defaultData.getSubid(), defaultData.getValue(), worldHeight));
 				}
@@ -252,7 +258,8 @@ public class AntiXRay extends JavaPlugin {
 
 				// write all world specific data back to config:
 				if (worldHeightSet) {
-					// we also have to store world specific max height data if it equals the general default max height value
+					// we also have to store world specific max height data if it equals the general default max height
+					// value
 					// because otherwise the world specific ore specific height values wouldn't use it as default value
 					worldsSection.set(worldName + DOT + "DefaultMaxHeight", worldHeight);
 				}
@@ -356,7 +363,8 @@ public class AntiXRay extends JavaPlugin {
 			}
 
 			if (id != Integer.MIN_VALUE) {
-				// make sure that all ore specifiers are in the same format, because we want to use them as lookup key later:
+				// make sure that all ore specifiers are in the same format, because we want to use them as lookup key
+				// later:
 				String oreSpecifier = this.toConfigKey(id, dataValue);
 
 				// if we have a default block data for this specific ore, use that for default values:
@@ -366,7 +374,8 @@ public class AntiXRay extends JavaPlugin {
 				int defaultValue = defaultData != null ? defaultData.getValue() : 0;
 				int value = blockSection.getInt("Value", defaultValue);
 
-				// only uses the default ore specific max height value if it is available and no (world specific) max height value was set:
+				// only uses the default ore specific max height value if it is available and no (world specific) max
+				// height value was set:
 				int effectiveDefaultHeight = (defaultData != null) && !defaultHeightExplicitlySet ? defaultData.getHeight() : defaultHeight;
 				int height = blockSection.getInt("MaxHeight", effectiveDefaultHeight);
 
@@ -410,6 +419,12 @@ public class AntiXRay extends JavaPlugin {
 		return location.getWorld().getName() + "(" + location.getBlockX() + "," + location.getBlockY() + "," + location.getBlockZ() + ")";
 	}
 
+	public static void debug(String message) {
+		if (AntiXRay.instance.debug) {
+			logger.info("[Debug] " + message);
+		}
+	}
+
 	// this will run async and call the provided callback when done
 	static void lookupPlayerUUIDForName(final String playerName, final Callback<UUID> runWhenDone) {
 		assert playerName != null;
@@ -430,14 +445,17 @@ public class AntiXRay extends JavaPlugin {
 				final OfflinePlayer offlinePlayer = Bukkit.getServer().getOfflinePlayer(playerName);
 				UUID uuid = null;
 				try {
-					// get uuid (casting to Player if the player is online might fix certain issues on older bukkit versions for at least online players)
+					// get uuid (casting to Player if the player is online might fix certain issues on older bukkit
+					// versions for at least online players)
 					uuid = offlinePlayer instanceof Player ? ((Player) offlinePlayer).getUniqueId() : offlinePlayer.getUniqueId();
 				} catch (Throwable e) {
-					// well.. seems like the bukkit version we are running on does not support getting the uuid of offline players
+					// well.. seems like the bukkit version we are running on does not support getting the uuid of
+					// offline players
 					uuid = null;
 				}
 
-				// Note: for now let's not use the uuid we got to import old playerdata here, because of potential issues regarding this being the wrong uuid in certain circumstances
+				// Note: for now let's not use the uuid we got to import old playerdata here, because of potential
+				// issues regarding this being the wrong uuid in certain circumstances
 
 				Bukkit.getScheduler().runTask(AntiXRay.instance, runWhenDone.setResult(uuid));
 			}
