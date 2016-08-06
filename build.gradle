@@ -1,0 +1,134 @@
+buildscript {
+	repositories {
+		jcenter()
+		mavenCentral()
+		maven {
+			url 'https://plugins.gradle.org/m2/'
+		}
+	}
+
+	dependencies {
+		classpath 'gradle.plugin.nl.javadude.gradle.plugins:license-gradle-plugin:0.12.1'
+	}
+}
+
+plugins {
+	// id 'com.github.hierynomus.license' version '0.12.1'
+}
+
+import org.apache.tools.ant.filters.*
+
+apply plugin: 'com.github.hierynomus.license'
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'eclipse'
+
+// default tasks
+defaultTasks 'clean', 'license', 'check', 'build', 'install'
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+group = 'me.ryanhamshire'
+version = projectVersion
+
+ext.projectName = projectName
+ext.url = url
+ext.description = description
+ext.authors= authors
+ext.author = authors.split(',\\s*')[0]
+
+repositories {
+	mavenCentral()
+	maven {
+		url 'http://repo.bukkit.org/content/groups/public'
+	}
+	maven {
+		url 'https://hub.spigotmc.org/nexus/content/groups/public/'
+	}
+	mavenLocal()
+}
+
+dependencies {
+	compile 'org.bukkit:bukkit:1.9-R0.1-SNAPSHOT'
+	testCompile group: 'junit', name: 'junit', version: '4.+'
+}
+
+jar {
+	manifest {
+		attributes 'Implementation-Title': project.name,
+					'Implementation-Version': version
+		// include versions of compile dependencies:
+		attributes configurations.compile.resolvedConfiguration.firstLevelModuleDependencies
+			.collectEntries{[it.moduleName, it.moduleVersion]}
+	}
+}
+
+// include and filter resources
+processResources {
+	from ('NOTICE.txt')
+	from ('LICENSE.txt')
+	from(sourceSets.main.resources.srcDirs)
+	filter {
+			line ->
+			line
+			.replace('${name}', project.name)
+			.replace('${version}', project.version)
+			.replace('${author}', project.author)
+			.replace('${authors}', project.authors)
+			.replace('${url}', project.url)
+			.replace('${description}', project.description)
+	}
+}
+
+// license header
+license {
+	ext.name = project.name
+	ext.author = project.author
+	ext.authors = project.authors
+	ext.url = project.url
+
+	header file('HEADER.txt')
+
+	include '**/*.java'
+	exclude '**/thirdparty/**'
+
+	ignoreFailures false
+	strictCheck true
+}
+
+// source compiler configuration
+configure([compileJava, compileTestJava]) {
+	options.deprecation = false
+	options.encoding = 'utf8'
+}
+
+task sourceJar(type: Jar) {
+	from sourceSets.main.java
+	from sourceSets.main.resources
+	classifier = 'sources'
+}
+
+javadoc {
+	options.encoding = 'utf8'
+	failOnError = false
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+	from javadoc.destinationDir
+	classifier = 'javadoc'
+}
+artifacts {
+	archives jar
+	// archives sourceJar
+	// archives javadocJar
+}
+
+uploadArchives {
+	repositories {
+		mavenDeployer {
+			mavenLocal()
+		}
+	}
+}

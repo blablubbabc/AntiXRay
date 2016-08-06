@@ -1,10 +1,10 @@
-name: AntiXRay
+name: ${name}
 main: me.ryanhamshire.AntiXRay.AntiXRay
 softdepend: [Multiverse-Core, My Worlds, Transporter]
-version: 1.8.5
-author: blablubbabc
-authors: [bigscary, blablubbabc]
-website: dev.bukkit.org/server-mods/anti-x-ray/
+version: '${version}'
+authors: [${authors}]
+website: '${url}'
+description: '${description}'
 commands:
     antixray:
         description: Antixray commands.
