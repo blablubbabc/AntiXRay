@@ -188,6 +188,18 @@ class CommandHandler implements CommandExecutor {
 				}
 
 				return true;
+			} else if (args[0].equalsIgnoreCase("reports")) {
+				
+				if ((args.length == 3) && args[1].equalsIgnoreCase("remove") {
+					// delete the args[2] report	
+				}
+				else {
+				// Load an arraylist of the reports and send them to the player
+				// List<String> reports = (depends on your saving system)
+				sender.sendMessage("Recent xray reports: ");
+				for (int i = 0; i < 6; i++) {
+					sender.sendMessage(reports.get(i));
+				}	
 			}
 		}
 		return false;
