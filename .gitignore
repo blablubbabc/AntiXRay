@@ -28,6 +28,10 @@ local.properties
 # PDT-specific
 .buildpath
 
+# Maven
+/target
+/build.xml
+dependency-reduced-pom.xml
 
 #################
 ## Visual Studio
