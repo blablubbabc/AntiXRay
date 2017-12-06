@@ -18,46 +18,47 @@
  */
 package me.ryanhamshire.AntiXRay;
 
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 
 // Stores data about protected blocks. Supports custom blocks.
 class BlockData {
 
-	private final int id;
-	private final byte subid;
+	private final Material type;
+	private final byte data; // -1 to ignore
 	private final int value;
-	private final int height;
+	private final int maxHeight;
 
-	public BlockData(int id, byte subid, int value, int height) {
-		this.id = id;
-		this.subid = subid;
+	public BlockData(Material type, byte data, int value, int maxHeight) {
+		this.type = type;
+		this.data = data;
 		this.value = value;
-		this.height = height;
+		this.maxHeight = maxHeight;
 	}
 
-	public byte getSubid() {
-		return subid;
+	public Material getType() {
+		return type;
 	}
 
-	public int getId() {
-		return id;
-	}
-
-	public int getHeight() {
-		return height;
+	public byte getData() {
+		return data;
 	}
 
 	public int getValue() {
 		return value;
 	}
 
-	// check if this BlockDatas type equals a given type of block (a subid of -1 ignores the subid)
-	public boolean isOfSameType(Block block) {
-		return (block != null && id == block.getTypeId() && (subid == -1 || subid == block.getData()));
+	public int getMaxHeight() {
+		return maxHeight;
 	}
 
-	// check if this BlockDatas type equals another BlockDatas type (a subid of -1 ignores the subid)
+	// check if this BlockData's type equals a given type of block (a data value of -1 ignores the data value)
+	public boolean isOfSameType(Block block) {
+		return (block != null && type == block.getType() && (data == -1 || data == block.getData()));
+	}
+
+	// check if this BlockData's type equals another BlockData's type (a data value of -1 ignores the data value)
 	public boolean isOfSameType(BlockData blockData) {
-		return (blockData != null && id == blockData.getId() && (subid == -1 || subid == blockData.getSubid()));
+		return (blockData != null && type == blockData.getType() && (data == -1 || data == blockData.getData()));
 	}
 }

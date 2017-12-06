@@ -72,7 +72,7 @@ class BlockEventHandler implements Listener {
 		// look for the block's type in the list of protected blocks
 		for (BlockData blockData : protections) {
 			// if it's in the list, consider whether this player should be permitted to break the block
-			if (blockData.isOfSameType(block) && height <= blockData.getHeight()) {
+			if (blockData.isOfSameType(block) && height <= blockData.getMaxHeight()) {
 				// if he doesn't have enough points
 				if (blockData.getValue() > 0 && playerData.points < blockData.getValue()) {
 					String reachedLimitCounterString = String.valueOf(playerData.reachedLimitCount);

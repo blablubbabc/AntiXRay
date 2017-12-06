@@ -34,7 +34,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.WorldType;
-import org.bukkit.command.*;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -64,7 +64,7 @@ public class AntiXRay extends JavaPlugin {
 	public int config_maxPoints; // the upper limit on points
 	public int config_startingPoints; // initial points for players who are new to the server
 	public boolean config_ignoreMaxPointsForBlockRatio; // whether it shall ignore if a player has more than maxPoints
-														// points when receiving them via breaking blocks (block ratio)
+														 // points when receiving them via breaking blocks (block ratio)
 	public boolean config_exemptCreativeModePlayers; // whether creative mode players should be exempt from the rules
 	public boolean config_notifyOnLimitReached; // whether to notify online moderators when a player reaches his limit
 
@@ -169,8 +169,8 @@ public class AntiXRay extends JavaPlugin {
 
 		// no valid values found? -> add default values for the default protected blocks list
 		if (defaultProtections.size() == 0) {
-			defaultProtections.put(this.toConfigKey(Material.DIAMOND_ORE.getId(), -1), new BlockData(Material.DIAMOND_ORE.getId(), (byte) -1, 100, 20));
-			defaultProtections.put(this.toConfigKey(Material.EMERALD_ORE.getId(), -1), new BlockData(Material.EMERALD_ORE.getId(), (byte) -1, 50, 35));
+			defaultProtections.put(this.toConfigKey(Material.DIAMOND_ORE, -1), new BlockData(Material.DIAMOND_ORE, (byte) -1, 100, 20));
+			defaultProtections.put(this.toConfigKey(Material.EMERALD_ORE, -1), new BlockData(Material.EMERALD_ORE, (byte) -1, 50, 35));
 		}
 
 		// write values back to config:
@@ -181,7 +181,7 @@ public class AntiXRay extends JavaPlugin {
 			BlockData data = entry.getValue();
 			ConfigurationSection blockSection = defaultBlocksSection.createSection(entry.getKey());
 			blockSection.set("Value", data.getValue());
-			if (data.getHeight() != defaultHeight) blockSection.set("MaxHeight", data.getHeight());
+			if (data.getMaxHeight() != defaultHeight) blockSection.set("MaxHeight", data.getMaxHeight());
 		}
 
 		// read world (specific) data:
@@ -204,7 +204,7 @@ public class AntiXRay extends JavaPlugin {
 				// write default world data to config:
 				if (environment == Environment.NORMAL && worldType == WorldType.NORMAL) {
 					ConfigurationSection protectedBlocksSection = worldSection.createSection("ProtectedBlocks");
-					String diamondKey = this.toConfigKey(Material.DIAMOND_ORE.getId(), -1);
+					String diamondKey = this.toConfigKey(Material.DIAMOND_ORE, -1);
 					protectedBlocksSection.set(diamondKey + DOT + "Value", 100);
 					protectedBlocksSection.set(diamondKey + DOT + "MaxHeight", 20);
 				} else if (environment == Environment.NETHER || environment == Environment.THE_END) {
@@ -221,7 +221,6 @@ public class AntiXRay extends JavaPlugin {
 		// read world data now:
 		for (String worldName : worldsSection.getKeys(false)) {
 			Map<String, BlockData> worldOres = new HashMap<String, BlockData>();
-			// Map<String, BlockData> worldSpecificOres = new HashMap<String, BlockData>();
 			worldBlockData.put(worldName, worldOres);
 			// add this world:
 			protections.addWorld(worldName);
@@ -248,7 +247,7 @@ public class AntiXRay extends JavaPlugin {
 					// using worldHeight for the block data here, so that the world specific height value can overwrite
 					// the height of the default ores
 					// so users don't have to overwrite the height for each specific default ore in each world
-					worldOres.put(defaultOre.getKey(), new BlockData(defaultData.getId(), defaultData.getSubid(), defaultData.getValue(), worldHeight));
+					worldOres.put(defaultOre.getKey(), new BlockData(defaultData.getType(), defaultData.getData(), defaultData.getValue(), worldHeight));
 				}
 
 				// load world specific ore data:
@@ -270,11 +269,11 @@ public class AntiXRay extends JavaPlugin {
 						BlockData blockData = entry.getValue();
 
 						int value = blockData.getValue();
-						int maxHeight = blockData.getHeight();
+						int maxHeight = blockData.getMaxHeight();
 
 						BlockData defaultData = defaultProtections.get(key);
 						int defaultOreValue = defaultData != null ? defaultData.getValue() : 0;
-						int defaultMaxOreHeight = (defaultData != null) && !worldHeightSet ? defaultData.getHeight() : worldHeight;
+						int defaultMaxOreHeight = (defaultData != null) && !worldHeightSet ? defaultData.getMaxHeight() : worldHeight;
 
 						String oreNode = worldName + DOT + "ProtectedBlocks" + DOT + key;
 						if (value != defaultOreValue) worldsSection.set(oreNode + DOT + "Value", value);
@@ -307,16 +306,8 @@ public class AntiXRay extends JavaPlugin {
 	}
 
 	// returns the most user-friendly config key possible to represent the given block type information
-	private String toConfigKey(int id, int dataValue) {
-		String key;
-
-		// use the material name if the id represents some known material:
-		Material material = Material.getMaterial(id);
-		if (material != null) {
-			key = material.toString();
-		} else {
-			key = String.valueOf(id);
-		}
+	private String toConfigKey(Material type, int dataValue) {
+		String key = type.name();
 
 		// as -1 is the default it can be omitted:
 		if (dataValue != -1) {
@@ -338,7 +329,7 @@ public class AntiXRay extends JavaPlugin {
 
 			// determine ore type and data value:
 			String[] oreData = oreConfigKey.split("~");
-			String oreType = oreData[0];
+			String oreTypeString = oreData[0];
 
 			byte dataValue = -1; // by default ignore the data value
 			if (oreData.length >= 2) {
@@ -348,41 +339,41 @@ public class AntiXRay extends JavaPlugin {
 				}
 			}
 
-			// get block id:
-			int id = Integer.MIN_VALUE; // assume that there will never be a block with this id
+			// get block type:
+			Material oreType = null;
+
 			try {
-				id = Integer.parseInt(oreType);
-			} catch (NumberFormatException e) {
-				// get block id by material name:
-				Material material = Material.matchMaterial(oreType);
-				if (material == null) {
-					logger.warning("Material not found: " + oreType);
-					continue;
-				} else {
-					id = material.getId();
-				}
+				// attempt to get by legacy id if possible:
+				int id = Integer.parseInt(oreTypeString);
+				oreType = Material.getMaterial(id);
+			} catch (Exception e) {
+				// get block type by material name:
+				oreType = Material.matchMaterial(oreTypeString);
 			}
 
-			if (id != Integer.MIN_VALUE) {
-				// make sure that all ore specifiers are in the same format, because we want to use them as lookup key
-				// later:
-				String oreSpecifier = this.toConfigKey(id, dataValue);
-
-				// if we have a default block data for this specific ore, use that for default values:
-				BlockData defaultData = defaultBlockData != null ? defaultBlockData.get(oreSpecifier) : null;
-
-				// data for this type of block:
-				int defaultValue = defaultData != null ? defaultData.getValue() : 0;
-				int value = blockSection.getInt("Value", defaultValue);
-
-				// only uses the default ore specific max height value if it is available and no (world specific) max
-				// height value was set:
-				int effectiveDefaultHeight = (defaultData != null) && !defaultHeightExplicitlySet ? defaultData.getHeight() : defaultHeight;
-				int height = blockSection.getInt("MaxHeight", effectiveDefaultHeight);
-
-				// initialize BlockData with the found block id, data value (sub-id) and height
-				blockData.put(oreSpecifier, new BlockData(id, dataValue, value, height));
+			if (oreType == null) {
+				logger.warning("Material not found: " + oreTypeString);
+				continue;
 			}
+
+			// make sure that all ore specifiers are in the same format, because we want to use them as lookup key
+			// later:
+			String oreSpecifier = this.toConfigKey(oreType, dataValue);
+
+			// if we have a default block data for this specific ore, use that for default values:
+			BlockData defaultData = defaultBlockData != null ? defaultBlockData.get(oreSpecifier) : null;
+
+			// data for this type of block:
+			int defaultValue = defaultData != null ? defaultData.getValue() : 0;
+			int value = blockSection.getInt("Value", defaultValue);
+
+			// only uses the default ore specific max height value if it is available and no (world specific) max
+			// height value was set:
+			int effectiveDefaultHeight = (defaultData != null) && !defaultHeightExplicitlySet ? defaultData.getMaxHeight() : defaultHeight;
+			int height = blockSection.getInt("MaxHeight", effectiveDefaultHeight);
+
+			// initialize BlockData with the found block type, data value (sub-id) and height
+			blockData.put(oreSpecifier, new BlockData(oreType, dataValue, value, height));
 		}
 		return blockData;
 	}

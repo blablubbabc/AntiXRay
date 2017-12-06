@@ -64,7 +64,7 @@ class ExplosionsListener implements Listener {
 			// look for that block's type in the list of protected blocks
 			for (BlockData blockData : protections) {
 				// if it's type is in our protected blocks list, remove the block from the explosion list (so it doesn't break)
-				if (blockData.isOfSameType(block) && height <= blockData.getHeight() && blockData.getValue() > 0) {
+				if (blockData.isOfSameType(block) && height <= blockData.getMaxHeight() && blockData.getValue() > 0) {
 					blocks.remove(i--);
 				}
 			}
