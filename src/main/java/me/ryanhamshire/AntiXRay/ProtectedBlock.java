@@ -10,38 +10,32 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 package me.ryanhamshire.AntiXRay;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 
-// Stores data about protected blocks. Supports custom blocks.
-class BlockData {
+// Holds data about protected blocks
+class ProtectedBlock {
 
 	private final Material type;
-	private final byte data; // -1 to ignore
 	private final int value;
 	private final int maxHeight;
 
-	public BlockData(Material type, byte data, int value, int maxHeight) {
+	public ProtectedBlock(Material type, int value, int maxHeight) {
 		this.type = type;
-		this.data = data;
 		this.value = value;
 		this.maxHeight = maxHeight;
 	}
 
 	public Material getType() {
 		return type;
-	}
-
-	public byte getData() {
-		return data;
 	}
 
 	public int getValue() {
@@ -52,13 +46,13 @@ class BlockData {
 		return maxHeight;
 	}
 
-	// check if this BlockData's type equals a given type of block (a data value of -1 ignores the data value)
+	// check if this ProtectedBlock's type equals a given type of block 
 	public boolean isOfSameType(Block block) {
-		return (block != null && type == block.getType() && (data == -1 || data == block.getData()));
+		return (block != null && type == block.getType());
 	}
 
-	// check if this BlockData's type equals another BlockData's type (a data value of -1 ignores the data value)
-	public boolean isOfSameType(BlockData blockData) {
-		return (blockData != null && type == blockData.getType() && (data == -1 || data == blockData.getData()));
+	// check if this ProtectedBlock's type equals another ProtectedBlock's type
+	public boolean isOfSameType(ProtectedBlock protectedBlock) {
+		return (protectedBlock != null && type == protectedBlock.getType());
 	}
 }

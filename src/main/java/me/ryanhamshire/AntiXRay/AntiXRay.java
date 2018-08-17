@@ -10,18 +10,20 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 package me.ryanhamshire.AntiXRay;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -163,29 +165,28 @@ public class AntiXRay extends JavaPlugin {
 
 		baseSection.set("DefaultMaxHeight", defaultHeight);
 
-		// load the list of default valuable ores:
-		ConfigurationSection defaultBlocksSection = baseSection.getConfigurationSection("ProtectedBlockValues");
-		Map<String, BlockData> defaultProtections = this.loadBlockData(defaultBlocksSection, null, defaultHeight, true);
+		// load the list of default protected blocks:
+		ConfigurationSection defaultProtectionsSection = baseSection.getConfigurationSection("ProtectedBlockValues");
+		List<ProtectedBlock> defaultProtections = this.loadBlockData(defaultProtectionsSection, null, defaultHeight, true);
 
 		// no valid values found? -> add default values for the default protected blocks list
-		if (defaultProtections.size() == 0) {
-			defaultProtections.put(this.toConfigKey(Material.DIAMOND_ORE, -1), new BlockData(Material.DIAMOND_ORE, (byte) -1, 100, 20));
-			defaultProtections.put(this.toConfigKey(Material.EMERALD_ORE, -1), new BlockData(Material.EMERALD_ORE, (byte) -1, 50, 35));
+		if (defaultProtections.isEmpty()) {
+			defaultProtections.add(new ProtectedBlock(Material.DIAMOND_ORE, 100, 20));
+			defaultProtections.add(new ProtectedBlock(Material.EMERALD_ORE, 50, 35));
 		}
 
 		// write values back to config:
 		// remove section first to remove invalid entries:
 		baseSection.set("ProtectedBlockValues", null);
-		defaultBlocksSection = baseSection.createSection("ProtectedBlockValues");
-		for (Entry<String, BlockData> entry : defaultProtections.entrySet()) {
-			BlockData data = entry.getValue();
-			ConfigurationSection blockSection = defaultBlocksSection.createSection(entry.getKey());
-			blockSection.set("Value", data.getValue());
-			if (data.getMaxHeight() != defaultHeight) blockSection.set("MaxHeight", data.getMaxHeight());
+		defaultProtectionsSection = baseSection.createSection("ProtectedBlockValues");
+		for (ProtectedBlock protectedBlock : defaultProtections) {
+			ConfigurationSection blockSection = defaultProtectionsSection.createSection(this.toConfigKey(protectedBlock));
+			blockSection.set("Value", protectedBlock.getValue());
+			if (protectedBlock.getMaxHeight() != defaultHeight) blockSection.set("MaxHeight", protectedBlock.getMaxHeight());
 		}
 
 		// read world (specific) data:
-		Map<String, Map<String, BlockData>> worldBlockData = new HashMap<String, Map<String, BlockData>>();
+		Map<String, List<ProtectedBlock>> allWorldsProtections = new HashMap<>();
 
 		ConfigurationSection worldsSection = baseSection.getConfigurationSection("Worlds");
 		if (worldsSection == null) {
@@ -204,7 +205,7 @@ public class AntiXRay extends JavaPlugin {
 				// write default world data to config:
 				if (environment == Environment.NORMAL && worldType == WorldType.NORMAL) {
 					ConfigurationSection protectedBlocksSection = worldSection.createSection("ProtectedBlocks");
-					String diamondKey = this.toConfigKey(Material.DIAMOND_ORE, -1);
+					String diamondKey = Material.DIAMOND_ORE.name();
 					protectedBlocksSection.set(diamondKey + DOT + "Value", 100);
 					protectedBlocksSection.set(diamondKey + DOT + "MaxHeight", 20);
 				} else if (environment == Environment.NETHER || environment == Environment.THE_END) {
@@ -220,8 +221,8 @@ public class AntiXRay extends JavaPlugin {
 
 		// read world data now:
 		for (String worldName : worldsSection.getKeys(false)) {
-			Map<String, BlockData> worldOres = new HashMap<String, BlockData>();
-			worldBlockData.put(worldName, worldOres);
+			List<ProtectedBlock> worldProtections = new ArrayList<ProtectedBlock>();
+			allWorldsProtections.put(worldName, worldProtections);
 			// add this world:
 			protections.addWorld(worldName);
 			// validate world:
@@ -241,48 +242,46 @@ public class AntiXRay extends JavaPlugin {
 				boolean worldHeightSet = worldSection.isSet("DefaultMaxHeight");
 				int worldHeight = worldSection.getInt("DefaultMaxHeight", defaultHeight);
 
-				// add default ores with worldHeight:
-				for (Entry<String, BlockData> defaultOre : defaultProtections.entrySet()) {
-					BlockData defaultData = defaultOre.getValue();
+				// add default protected blocks with worldHeight:
+				for (ProtectedBlock defaultProtectedBlock : defaultProtections) {
 					// using worldHeight for the block data here, so that the world specific height value can overwrite
 					// the height of the default ores
-					// so users don't have to overwrite the height for each specific default ore in each world
-					worldOres.put(defaultOre.getKey(), new BlockData(defaultData.getType(), defaultData.getData(), defaultData.getValue(), worldHeight));
+					// so users don't have to overwrite the height for each specific default protected block in each
+					// world
+					worldProtections.add(new ProtectedBlock(defaultProtectedBlock.getType(), defaultProtectedBlock.getValue(), worldHeight));
 				}
 
-				// load world specific ore data:
-				ConfigurationSection oresSection = worldSection.getConfigurationSection("ProtectedBlocks");
-				Map<String, BlockData> worldSpecificOres = this.loadBlockData(oresSection, defaultProtections, worldHeight, worldHeightSet);
-				// overwrite default ore data for this world:
-				worldOres.putAll(worldSpecificOres);
+				// load world specific protected blocks data:
+				ConfigurationSection blocksSection = worldSection.getConfigurationSection("ProtectedBlocks");
+				List<ProtectedBlock> worldSpecificProtections = this.loadBlockData(blocksSection, defaultProtections, worldHeight, worldHeightSet);
+				// overwrite default protected blocks data for this world:
+				worldProtections.addAll(worldSpecificProtections);
 
 				// write all world specific data back to config:
 				if (worldHeightSet) {
 					// we also have to store world specific max height data if it equals the general default max height
-					// value
-					// because otherwise the world specific ore specific height values wouldn't use it as default value
+					// value because otherwise the world specific block specific height values wouldn't use it as
+					// default value
 					worldsSection.set(worldName + DOT + "DefaultMaxHeight", worldHeight);
 				}
-				if (worldSpecificOres.size() > 0) {
-					for (Entry<String, BlockData> entry : worldSpecificOres.entrySet()) {
-						String key = entry.getKey();
-						BlockData blockData = entry.getValue();
+				if (worldSpecificProtections.size() > 0) {
+					for (ProtectedBlock protectedBlock : worldSpecificProtections) {
+						Material blockType = protectedBlock.getType();
+						int value = protectedBlock.getValue();
+						int maxHeight = protectedBlock.getMaxHeight();
 
-						int value = blockData.getValue();
-						int maxHeight = blockData.getMaxHeight();
+						ProtectedBlock defaultProtection = this.findFirst(defaultProtections, blockType);
+						int defaultBlockValue = defaultProtection != null ? defaultProtection.getValue() : 0;
+						int defaultMaxBlockHeight = (defaultProtection != null) && !worldHeightSet ? defaultProtection.getMaxHeight() : worldHeight;
 
-						BlockData defaultData = defaultProtections.get(key);
-						int defaultOreValue = defaultData != null ? defaultData.getValue() : 0;
-						int defaultMaxOreHeight = (defaultData != null) && !worldHeightSet ? defaultData.getMaxHeight() : worldHeight;
-
-						String oreNode = worldName + DOT + "ProtectedBlocks" + DOT + key;
-						if (value != defaultOreValue) worldsSection.set(oreNode + DOT + "Value", value);
-						if (maxHeight != defaultMaxOreHeight) worldsSection.set(oreNode + DOT + "MaxHeight", maxHeight);
+						String blockNode = worldName + DOT + "ProtectedBlocks" + DOT + this.toConfigKey(protectedBlock);
+						if (value != defaultBlockValue) worldsSection.set(blockNode + DOT + "Value", value);
+						if (maxHeight != defaultMaxBlockHeight) worldsSection.set(blockNode + DOT + "MaxHeight", maxHeight);
 					}
 				}
 			} else {
 				// add only the default ores (with default height):
-				worldOres.putAll(defaultProtections);
+				worldProtections.addAll(defaultProtections);
 			}
 		}
 
@@ -290,10 +289,10 @@ public class AntiXRay extends JavaPlugin {
 		protections.clear();
 
 		// set the loaded protections for all worlds:
-		for (Entry<String, Map<String, BlockData>> worldData : worldBlockData.entrySet()) {
+		for (Entry<String, List<ProtectedBlock>> worldData : allWorldsProtections.entrySet()) {
 			String worldName = worldData.getKey();
-			for (BlockData blockData : worldData.getValue().values()) {
-				protections.addProtection(worldName, blockData);
+			for (ProtectedBlock protectedBlock : worldData.getValue()) {
+				protections.addProtection(worldName, protectedBlock);
 			}
 		}
 
@@ -305,77 +304,57 @@ public class AntiXRay extends JavaPlugin {
 		}
 	}
 
-	// returns the most user-friendly config key possible to represent the given block type information
-	private String toConfigKey(Material type, int dataValue) {
-		String key = type.name();
-
-		// as -1 is the default it can be omitted:
-		if (dataValue != -1) {
-			key += "~" + dataValue;
+	private ProtectedBlock findFirst(List<ProtectedBlock> protectedBlocks, Material blockType) {
+		for (ProtectedBlock protectedBlock : protectedBlocks) {
+			if (protectedBlock.getType() == blockType) {
+				return protectedBlock;
+			}
 		}
+		return null;
+	}
 
-		return key;
+	private String toConfigKey(ProtectedBlock protectedBlock) {
+		return this.toConfigKey(protectedBlock.getType());
+	}
+
+	private String toConfigKey(Material blockType) {
+		return blockType.name();
 	}
 
 	// utility method for loading block data from the given config section
-	// the returned map has keys in the format: "blockId~dataValue" (with dataValue possibly being -1)
-	private Map<String, BlockData> loadBlockData(ConfigurationSection section, Map<String, BlockData> defaultBlockData, int defaultHeight, boolean defaultHeightExplicitlySet) {
-		Map<String, BlockData> blockData = new HashMap<String, BlockData>();
-		if (section == null) return blockData;
+	private List<ProtectedBlock> loadBlockData(ConfigurationSection section, List<ProtectedBlock> defaultProtectedBlocks, int defaultHeight, boolean defaultHeightExplicitlySet) {
+		List<ProtectedBlock> protectedBlocks = new ArrayList<>();
+		if (section == null) return protectedBlocks;
 
-		for (String oreConfigKey : section.getKeys(false)) {
-			ConfigurationSection blockSection = section.getConfigurationSection(oreConfigKey);
+		for (String blockConfigKey : section.getKeys(false)) {
+			ConfigurationSection blockSection = section.getConfigurationSection(blockConfigKey);
 			if (blockSection == null) continue; // no valid section
 
-			// determine ore type and data value:
-			String[] oreData = oreConfigKey.split("~");
-			String oreTypeString = oreData[0];
-
-			byte dataValue = -1; // by default ignore the data value
-			if (oreData.length >= 2) {
-				try {
-					dataValue = Byte.parseByte(oreData[1]);
-				} catch (NumberFormatException e) {
-				}
-			}
-
-			// get block type:
-			Material oreType = null;
-
-			try {
-				// attempt to get by legacy id if possible:
-				int id = Integer.parseInt(oreTypeString);
-				oreType = Material.getMaterial(id);
-			} catch (Exception e) {
-				// get block type by material name:
-				oreType = Material.matchMaterial(oreTypeString);
-			}
-
-			if (oreType == null) {
-				logger.warning("Material not found: " + oreTypeString);
+			// determine block type by material name:
+			Material blockType = Material.matchMaterial(blockConfigKey);
+			if (blockType == null) {
+				logger.warning("Material not found: " + blockConfigKey);
 				continue;
 			}
 
-			// make sure that all ore specifiers are in the same format, because we want to use them as lookup key
-			// later:
-			String oreSpecifier = this.toConfigKey(oreType, dataValue);
-
-			// if we have a default block data for this specific ore, use that for default values:
-			BlockData defaultData = defaultBlockData != null ? defaultBlockData.get(oreSpecifier) : null;
+			// if we have default block data for this specific block, use that for default values:
+			ProtectedBlock defaultData = (defaultProtectedBlocks != null ? this.findFirst(defaultProtectedBlocks, blockType) : null);
 
 			// data for this type of block:
-			int defaultValue = defaultData != null ? defaultData.getValue() : 0;
+			int defaultValue = (defaultData != null ? defaultData.getValue() : 0);
 			int value = blockSection.getInt("Value", defaultValue);
 
-			// only uses the default ore specific max height value if it is available and no (world specific) max
+			// only uses the default block specific max height value if it is available and no (world specific) max
 			// height value was set:
 			int effectiveDefaultHeight = (defaultData != null) && !defaultHeightExplicitlySet ? defaultData.getMaxHeight() : defaultHeight;
 			int height = blockSection.getInt("MaxHeight", effectiveDefaultHeight);
 
-			// initialize BlockData with the found block type, data value (sub-id) and height
-			blockData.put(oreSpecifier, new BlockData(oreType, dataValue, value, height));
+			// initialize the ProtectedBlock with the configured block type and height
+			protectedBlocks.add(new ProtectedBlock(blockType, value, height));
+			// TODO warning/error on duplicate block types? Or allow different values for different heights by sorting
+			// protections by their heights?
 		}
-		return blockData;
+		return protectedBlocks;
 	}
 
 	static ProtectedBlocks getProtections() {

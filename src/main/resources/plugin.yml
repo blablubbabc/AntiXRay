@@ -1,5 +1,6 @@
 name: ${name}
 main: me.ryanhamshire.AntiXRay.AntiXRay
+api-version: '1.13'
 softdepend: [Multiverse-Core, My Worlds, Transporter]
 version: '${version}'
 authors: [${authors}]

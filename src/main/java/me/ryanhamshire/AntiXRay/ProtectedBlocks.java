@@ -10,11 +10,11 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 package me.ryanhamshire.AntiXRay;
 
@@ -27,43 +27,43 @@ import java.util.Map;
 class ProtectedBlocks {
 
 	// stores protections by world <worldName -> protection>
-	private final Map<String, List<BlockData>> worlds = new HashMap<String, List<BlockData>>();
+	private final Map<String, List<ProtectedBlock>> worlds = new HashMap<String, List<ProtectedBlock>>();
 
 	ProtectedBlocks() {
 	}
 
 	void addWorld(String worldName) {
-		worlds.put(worldName, new ArrayList<BlockData>());
+		worlds.put(worldName, new ArrayList<ProtectedBlock>());
 	}
 
 	void clear() {
 		worlds.clear();
 	}
 
-	void addProtection(String worldName, BlockData blockData) {
-		List<BlockData> worldBlockData = worlds.get(worldName);
+	void addProtection(String worldName, ProtectedBlock protectedBlock) {
+		List<ProtectedBlock> worldBlockData = worlds.get(worldName);
 		if (worldBlockData == null) {
-			worldBlockData = new ArrayList<BlockData>();
+			worldBlockData = new ArrayList<ProtectedBlock>();
 			worlds.put(worldName, worldBlockData);
 		}
 		// check if protection for the same type of block already exists and remove it:
 		int foundIndex = -1;
 		for (int i = 0; i < worldBlockData.size(); i++) {
-			if (worldBlockData.get(i).isOfSameType(blockData)) {
+			if (worldBlockData.get(i).isOfSameType(protectedBlock)) {
 				foundIndex = i;
-				// we can assume that there is max. one BlockData of the same type..
+				// we can assume that there is max one ProtectedBlock of the same type..
 				break;
 			}
 		}
 		if (foundIndex != -1) worldBlockData.remove(foundIndex);
-		worldBlockData.add(blockData);
+		worldBlockData.add(protectedBlock);
 	}
 
 	boolean isWorldProtected(String worldName) {
 		return worlds.containsKey(worldName);
 	}
 
-	List<BlockData> getProtections(String worldName) {
+	List<ProtectedBlock> getProtections(String worldName) {
 		return worlds.get(worldName);
 	}
 }

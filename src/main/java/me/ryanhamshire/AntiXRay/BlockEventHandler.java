@@ -10,11 +10,11 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 package me.ryanhamshire.AntiXRay;
 
@@ -55,7 +55,7 @@ class BlockEventHandler implements Listener {
 		Block block = breakEvent.getBlock();
 
 		// get block protections for this world
-		List<BlockData> protections = AntiXRay.getProtections().getProtections(block.getWorld().getName());
+		List<ProtectedBlock> protections = AntiXRay.getProtections().getProtections(block.getWorld().getName());
 
 		// if there are no protections for this world, ignore the event
 		if (protections == null || protections.isEmpty()) return;
@@ -70,11 +70,11 @@ class BlockEventHandler implements Listener {
 		int height = block.getLocation().getBlockY();
 
 		// look for the block's type in the list of protected blocks
-		for (BlockData blockData : protections) {
+		for (ProtectedBlock protectedBlock : protections) {
 			// if it's in the list, consider whether this player should be permitted to break the block
-			if (blockData.isOfSameType(block) && height <= blockData.getMaxHeight()) {
+			if (protectedBlock.isOfSameType(block) && height <= protectedBlock.getMaxHeight()) {
 				// if he doesn't have enough points
-				if (blockData.getValue() > 0 && playerData.points < blockData.getValue()) {
+				if (protectedBlock.getValue() > 0 && playerData.points < protectedBlock.getValue()) {
 					String reachedLimitCounterString = String.valueOf(playerData.reachedLimitCount);
 
 					if (!playerData.reachedLimitThisSession) {
@@ -102,7 +102,7 @@ class BlockEventHandler implements Listener {
 					}
 
 					// estimate how long it will be before he can break this block
-					int minutesUntilBreak = (int) ((blockData.getValue() - playerData.points) / (float) (AntiXRay.instance.config_pointsPerHour) * 60);
+					int minutesUntilBreak = (int) ((protectedBlock.getValue() - playerData.points) / (float) (AntiXRay.instance.config_pointsPerHour) * 60);
 					if (minutesUntilBreak == 0) minutesUntilBreak = 1;
 
 					// inform him
@@ -113,14 +113,14 @@ class BlockEventHandler implements Listener {
 
 				} else {
 					// otherwise, subtract the value of the block from his points
-					playerData.points -= blockData.getValue();
+					playerData.points -= protectedBlock.getValue();
 					// make sure that the players point are lower than the maxPoints limit:
 					if (!AntiXRay.instance.config_ignoreMaxPointsForBlockRatio && playerData.points > AntiXRay.instance.config_maxPoints) {
 						playerData.points = AntiXRay.instance.config_maxPoints;
 					}
 				}
 
-				// once a match is found, no need to look farther
+				// once a match is found, no need to look further
 				return;
 			}
 		}
